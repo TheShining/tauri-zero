@@ -1,0 +1,19 @@
+# 统一文本文件为 LF，跨平台一致（与 .editorconfig / Prettier endOfLine:lf 对齐）
+* text=auto eol=lf
+
+# 二进制资源不做换行转换
+*.png  binary
+*.ico  binary
+*.icns binary
+*.svg  binary
+
+# Windows 专属脚本保持 CRLF
+*.bat      text eol=crlf
+*.cmd      text eol=crlf
+*.ps1      text eol=crlf
+
+# Shell 脚本强制 LF
+*.sh       text eol=lf
+
+# 锁文件保持原样
+pnpm-lock.yaml -text
