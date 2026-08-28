@@ -5,3 +5,6 @@ src-tauri/gen
 pnpm-lock.yaml
 *.md
 .gitignore
+# Env 文件无 parser 且不应被重排 / Env files have no parser, do not reformat
+.env
+.env.*

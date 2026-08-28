@@ -12,6 +12,10 @@ dist
 dist-ssr
 *.local
 
+# Env 本地覆盖（含密钥，勿提交）/ Env local overrides (secrets, never commit)
+.env.local
+.env.*.local
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

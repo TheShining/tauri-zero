@@ -1,0 +1,5 @@
+dist
+src-tauri
+node_modules
+# Tauri 模板残留，P1 前端骨架将替换
+src/App.css
