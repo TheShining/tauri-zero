@@ -1,51 +1,25 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import { invoke } from "@tauri-apps/api/core";
-import "./App.css";
+import { ConfigProvider, theme as antdTheme } from "antd";
+import zhCN from "antd/locale/zh_CN";
+import enUS from "antd/locale/en_US";
+import AppRouter from "./router";
+import ErrorBoundary from "./components/ErrorBoundary";
+import { useAppStore } from "./stores/useAppStore";
 
-function App() {
-  const [greetMsg, setGreetMsg] = useState("");
-  const [name, setName] = useState("");
-
-  async function greet() {
-    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    setGreetMsg(await invoke("greet", { name }));
-  }
+export default function App() {
+  const theme = useAppStore((s) => s.theme);
+  const locale = useAppStore((s) => s.locale);
 
   return (
-    <main className="container">
-      <h1>Welcome to Tauri + React</h1>
-
-      <div className="row">
-        <a href="https://vite.dev" target="_blank">
-          <img src="/vite.svg" className="logo vite" alt="Vite logo" />
-        </a>
-        <a href="https://tauri.app" target="_blank">
-          <img src="/tauri.svg" className="logo tauri" alt="Tauri logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <p>Click on the Tauri, Vite, and React logos to learn more.</p>
-
-      <form
-        className="row"
-        onSubmit={(e) => {
-          e.preventDefault();
-          void greet();
-        }}
-      >
-        <input
-          id="greet-input"
-          onChange={(e) => setName(e.currentTarget.value)}
-          placeholder="Enter a name..."
-        />
-        <button type="submit">Greet</button>
-      </form>
-      <p>{greetMsg}</p>
-    </main>
+    <ConfigProvider
+      locale={locale === "zh-CN" ? zhCN : enUS}
+      theme={{
+        algorithm: theme === "dark" ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
+        token: { colorPrimary: "#1677ff" },
+      }}
+    >
+      <ErrorBoundary>
+        <AppRouter />
+      </ErrorBoundary>
+    </ConfigProvider>
   );
 }
-
-export default App;
