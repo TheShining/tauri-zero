@@ -2,6 +2,30 @@
 
 > 企业级 Tauri 2 + React 19 + Vite 开箱即用脚手架（渐进式建设中）。
 
+## ✨ 更新亮点（P1 企业级骨架）
+
+本轮落地 P1 企业级前端 + Rust 骨架，所有检查项均已验证通过（`pnpm lint` / `pnpm typecheck` / `pnpm format:check` / `pnpm rust:check` / `pnpm rust:clippy` 全绿）。
+
+### 前端骨架
+- **路由**：react-router v8（单包导入，`createBrowserRouter` + 懒加载 + 布局路由）
+- **状态管理**：zustand v5 + persist（`useAppStore` / `useUserStore`）
+- **请求层**：`@tauri-apps/plugin-http` 传输层 + 自封装 axios 风格拦截器（请求/响应/错误拦截器，默认注入 token 与 baseURL）
+- **UI 组件库**：Ant Design v6（`ConfigProvider` 主题 + 暗色模式 + locale）
+- **国际化**：i18next + react-i18next（zh-CN / en-US）
+- **错误边界**：`ErrorBoundary` + `AppFeedback`（message/notification 统一封装）
+
+### Rust 骨架
+- **日志**：tauri-plugin-log（stdout + LogDir 文件日志）
+- **统一错误**：thiserror 定义 `AppError` / `AppResult`
+- **全局状态**：tokio RwLock 定义 `AppState` / `SharedState`
+- **命令模块化**：`commands/{mod,greet,app}.rs`
+- **安全加固**：CSP + capability 最小权限（`http:default`）
+
+### 技术选型说明
+- 路由统一从 `react-router` 导入（v8 单包，不再使用 `react-router-dom`）
+- 请求层基于 `@tauri-apps/plugin-http` 自封装，不引入 axios
+- UI 统一使用 Ant Design v6（原计划 Arco Design 已替换）
+
 ## ✨ 更新亮点（P0 工程化基线）
 
 本轮为脚手架奠定团队协作与质量门禁基础，所有检查项均已验证通过（pnpm lint / pnpm typecheck / pnpm format:check 全绿，git hooks 已就位）。
@@ -59,6 +83,12 @@
 
 - **桌面框架**: Tauri 2
 - **前端**: React 19.2 + TypeScript 5.8 + Vite 7
+- **路由**: react-router v8
+- **状态管理**: zustand v5
+- **请求层**: @tauri-apps/plugin-http（自封装拦截器）
+- **UI 组件库**: Ant Design v6
+- **国际化**: i18next + react-i18next
+- **Rust 端**: tauri-plugin-log / thiserror / tokio
 - **包管理**: pnpm（workspace 模式）
 
 ## 快速开始
@@ -111,19 +141,30 @@ type: feat | fix | docs | style | refactor | perf | test | build | ci | chore | 
 ```
 tauri-zero/
 ├── src/                 # 前端源码
-│   ├── api/             # 接口/请求封装（P1）
-│   ├── components/       # 通用组件（P1）
-│   ├── hooks/            # 自定义 hooks（P1）
-│   ├── layouts/          # 布局（P1）
-│   ├── locales/          # 国际化资源（P1）
-│   ├── pages/            # 路由页面（P1）
-│   ├── router/           # 路由配置（P1）
-│   ├── stores/           # 状态管理（P1）
-│   ├── styles/           # 全局样式（P1）
-│   ├── types/            # 类型定义（P1）
-│   └── utils/            # 工具函数（P1）
+│   ├── api/             # 请求层（plugin-http 传输 + 拦截器）
+│   │   ├── client.ts    #   fetch 传输层封装
+│   │   ├── request.ts   #   拦截器 + request<T>() 统一入口
+│   │   ├── types.ts     #   ApiResponse / RequestConfig 类型
+│   │   └── modules/     #   业务 API 模块
+│   ├── components/      # 通用组件（ErrorBoundary / ThemeToggle / LocaleSwitch / AppFeedback）
+│   ├── layouts/         # 布局（BasicLayout）
+│   ├── locales/         # 国际化资源（zh-CN / en-US）
+│   ├── pages/           # 路由页面（Home / NotFound）
+│   ├── router/          # 路由配置（createBrowserRouter）
+│   ├── stores/          # 状态管理（useAppStore / useUserStore）
+│   ├── i18n.ts          # i18next 初始化
+│   ├── App.tsx          # ConfigProvider + ErrorBoundary + AppRouter
+│   └── main.tsx         # 挂载入口
 ├── src-tauri/           # Rust 端
 │   ├── src/
+│   │   ├── commands/    # 命令模块（greet / app）
+│   │   ├── error.rs     # AppError / AppResult
+│   │   ├── state.rs     # AppState / SharedState
+│   │   ├── lib.rs       # Builder 装配
+│   │   └── main.rs      # 入口
+│   ├── capabilities/    # 权限（http:default）
+│   ├── tauri.conf.json  # CSP 安全配置
+│   ├── Cargo.toml
 │   ├── rustfmt.toml
 │   ├── clippy.toml
 │   └── .cargo/config.toml
@@ -139,8 +180,8 @@ tauri-zero/
 
 - [x] **P0** 工程化基线（lint / format / commit 规范 / hooks / 目录分层）
 - [x] **P0 增补** React 19.2 / React Compiler / Stylelint / 多环境变量
-- [ ] **P1** 前端骨架（路由 / 状态 / 请求层 / 环境变量 / **Arco Design** UI / i18n / 错误边界）
-- [ ] **P1** Rust 骨架（日志 / 错误类型 / AppState / 命令模块化 / 安全加固 CSP）
+- [x] **P1** 前端骨架（路由 / 状态 / 请求层 / Ant Design / i18n / 错误边界）
+- [x] **P1** Rust 骨架（日志 / 错误类型 / AppState / 命令模块化 / 安全加固 CSP）
 - [ ] **P2** 持久化（store/sqlite）+ 测试（Vitest）
 - [ ] **P3** CI/CD + 自动更新 + 文档完善
 - [ ] **P4** 可观测性（错误上报 / 性能监控）
