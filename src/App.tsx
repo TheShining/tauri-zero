@@ -8,13 +8,14 @@ import { useAppStore } from "./stores/useAppStore";
 export default function App() {
   const theme = useAppStore((s) => s.theme);
   const locale = useAppStore((s) => s.locale);
+  const primaryColor = useAppStore((s) => s.primaryColor);
 
   return (
     <ConfigProvider
       locale={locale === "zh-CN" ? zhCN : enUS}
       theme={{
         algorithm: theme === "dark" ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
-        token: { colorPrimary: "#1677ff" },
+        token: { colorPrimary: primaryColor },
       }}
     >
       <ErrorBoundary>

@@ -7,8 +7,10 @@ export type Locale = "zh-CN" | "en-US";
 interface AppState {
   theme: ThemeMode;
   locale: Locale;
+  primaryColor: string;
   setTheme: (theme: ThemeMode) => void;
   setLocale: (locale: Locale) => void;
+  setPrimaryColor: (primaryColor: string) => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -16,8 +18,10 @@ export const useAppStore = create<AppState>()(
     (set) => ({
       theme: "light",
       locale: "zh-CN",
+      primaryColor: "#1677ff",
       setTheme: (theme) => set({ theme }),
       setLocale: (locale) => set({ locale }),
+      setPrimaryColor: (primaryColor) => set({ primaryColor }),
     }),
     { name: "app-store" },
   ),
