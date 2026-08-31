@@ -21,3 +21,17 @@ impl Serialize for AppError {
 }
 
 pub type AppResult<T> = Result<T, AppError>;
+
+#[cfg(test)]
+mod tests {
+    use super::AppError;
+
+    #[test]
+    fn serializes_invalid_input_as_structured_object() {
+        let value = serde_json::to_value(AppError::InvalidInput("name is empty".into())).unwrap();
+
+        assert_eq!(value["kind"], "invalid_input");
+        assert_eq!(value["code"], "INVALID_INPUT");
+        assert_eq!(value["message"], "name is empty");
+    }
+}
