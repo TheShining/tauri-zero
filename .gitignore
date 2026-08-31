@@ -11,6 +11,7 @@ docs
 node_modules
 dist
 dist-ssr
+bundle-analysis
 *.local
 
 # Env 本地覆盖（含密钥，勿提交）/ Env local overrides (secrets, never commit)

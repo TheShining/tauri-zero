@@ -207,3 +207,21 @@ Rust 调试通过 `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port
 ## IDE 设置
 
 安装推荐扩展（VS Code 打开时自动提示）：Tauri、rust-analyzer、ESLint、Prettier。
+
+## 📦 包体积分析（Bundle Analysis）
+
+项目内置 `rollup-plugin-visualizer` 作为开发工具，用于分析打包产物体积。
+
+### 使用方法
+
+1. 执行构建：
+
+   ```bash
+   pnpm build
+   ```
+
+2. 构建完成后，`bundle-analysis/stats.html` 会生成交互式体积树状图（treemap）。
+
+3. 用浏览器打开 `bundle-analysis/stats.html`，即可查看每个模块的压缩前 / gzip / brotli 体积占比，快速定位大依赖。
+
+> 说明：`bundle-analysis/` 已被 `.gitignore` 忽略，分析产物不会提交到仓库。若需临时关闭分析，可移除 `vite.config.ts` 中的 `visualizer` 插件。

@@ -1,4 +1,4 @@
-import { Card, ColorPicker, Typography } from "antd";
+import { Card, Typography } from "antd";
 import { useTranslation } from "react-i18next";
 import { useAppStore } from "../stores/useAppStore";
 
@@ -11,10 +11,11 @@ export default function Settings() {
     <Card title={t("common.settings")}>
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         <Typography.Text>{t("common.primaryColor")}</Typography.Text>
-        <ColorPicker
+        <input
+          type="color"
           value={primaryColor}
-          onChange={(color) => setPrimaryColor(color.toHexString())}
-          showText
+          onChange={(e) => setPrimaryColor(e.target.value)}
+          style={{ width: 48, height: 32, padding: 0, border: "none", cursor: "pointer" }}
         />
       </div>
     </Card>
