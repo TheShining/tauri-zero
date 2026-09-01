@@ -31,3 +31,6 @@ bundle-analysis
 *.njsproj
 *.sln
 *.sw?
+
+# Tauri updater signing key (secret, never commit)
+src-tauri/updater.key

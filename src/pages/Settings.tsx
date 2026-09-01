@@ -1,6 +1,7 @@
 import { Card, Typography } from "antd";
 import { useTranslation } from "react-i18next";
 import { useAppStore } from "../stores/useAppStore";
+import UpdateChecker from "../components/UpdateChecker";
 
 export default function Settings() {
   const { t } = useTranslation();
@@ -17,6 +18,9 @@ export default function Settings() {
           onChange={(e) => setPrimaryColor(e.target.value)}
           style={{ width: 48, height: 32, padding: 0, border: "none", cursor: "pointer" }}
         />
+      </div>
+      <div style={{ marginTop: 16 }}>
+        <UpdateChecker />
       </div>
     </Card>
   );

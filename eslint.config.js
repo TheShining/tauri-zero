@@ -50,7 +50,7 @@ export default tseslint.config(
 
   // 配置文件（非项目内 TS）
   {
-    files: ["*.config.{ts,js,mjs}", "vite.config.ts", "eslint.config.js"],
+    files: ["*.config.{ts,js,mjs}", "vite.config.ts", "eslint.config.js", "scripts/**/*.mjs"],
     ...tseslint.configs.disableTypeChecked,
   },
 
