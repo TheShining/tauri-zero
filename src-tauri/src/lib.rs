@@ -40,6 +40,9 @@ pub fn run() {
             commands::note::create_note,
             commands::note::update_note,
             commands::note::delete_note,
+            commands::fs::read_text_file,
+            commands::fs::write_text_file,
+            commands::fs::file_exists
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
