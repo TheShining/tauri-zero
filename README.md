@@ -140,6 +140,7 @@ type: feat | fix | docs | style | refactor | perf | test | build | ci | chore | 
 
 ```
 tauri-zero/
+├── .github/workflows/   # CI / release 工作流
 ├── src/                 # 前端源码
 │   ├── api/             # 请求层（plugin-http 传输 + 拦截器）
 │   │   ├── client.ts    #   fetch 传输层封装
@@ -173,18 +174,31 @@ tauri-zero/
 ├── eslint.config.js
 ├── .prettierrc.json
 ├── commitlint.config.js
+├── CONTRIBUTING.md
+├── LICENSE
 └── package.json
 ```
 
 ## 路线图
 
-- [x] **P0** 工程化基线（lint / format / commit 规范 / hooks / 目录分层）
+- [x] **P0** 工程化基线
 - [x] **P0 增补** React 19.2 / React Compiler / Stylelint / 多环境变量
-- [x] **P1** 前端骨架（路由 / 状态 / 请求层 / Ant Design / i18n / 错误边界）
-- [x] **P1** Rust 骨架（日志 / 错误类型 / AppState / 命令模块化 / 安全加固 CSP）
-- [ ] **P2** 持久化（store/sqlite）+ 测试（Vitest）
-- [ ] **P3** CI/CD + 自动更新 + 文档完善
+- [x] **P1** 前端骨架
+- [x] **P1** Rust 骨架
+- [x] **P2** 持久化（sqlx）/ 文件系统 / 系统插件 / 自动更新 / 测试最小集
+- [x] **P3** CI/CD + 自动更新分发 + 文档完善
 - [ ] **P4** 可观测性（错误上报 / 性能监控）
+
+## CI/CD
+
+- PR 与 push main 触发 `.github/workflows/ci.yml`，三平台矩阵运行 lint / typecheck / test / rust:check / rust:clippy / rust:test。
+- release-please 自动创建 release PR、bump 版本并生成 changelog。
+- 打 `v*` tag 触发 `.github/workflows/release.yml`，三平台构建并上传 GitHub Release。
+
+## 自动更新
+
+- 使用 `tauri-plugin-updater`，更新清单托管在 GitHub Releases。
+- 签名私钥通过 GitHub Secret `TAURI_SIGNING_PRIVATE_KEY` 注入，私钥文件 `src-tauri/updater.key` 已 gitignore。
 
 ## 调试（VS Code，F5）
 
