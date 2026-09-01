@@ -1,4 +1,4 @@
-use serde::Serialize;
+use serde::ser::{Serialize, SerializeStruct, Serializer};
 
 #[derive(Debug, thiserror::Error)]
 #[allow(dead_code)]
@@ -14,9 +14,18 @@ pub enum AppError {
 impl Serialize for AppError {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
-        S: serde::Serializer,
+        S: Serializer,
     {
-        serializer.serialize_str(&self.to_string())
+        let (kind, code, message) = match self {
+            AppError::NotFound(msg) => ("not_found", "NOT_FOUND", msg.as_str()),
+            AppError::InvalidInput(msg) => ("invalid_input", "INVALID_INPUT", msg.as_str()),
+            AppError::Internal(msg) => ("internal", "INTERNAL", msg.as_str()),
+        };
+        let mut state = serializer.serialize_struct("AppError", 3)?;
+        state.serialize_field("kind", kind)?;
+        state.serialize_field("code", code)?;
+        state.serialize_field("message", message)?;
+        state.end()
     }
 }
 
