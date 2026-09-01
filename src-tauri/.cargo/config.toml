@@ -1,3 +1,6 @@
 [build]
 # 统一 target 目录（与 src-tauri 同级便于清理）
 # target-dir = "../target"
+
+[env]
+CRT_STATIC = "1"
