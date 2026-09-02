@@ -1,241 +1,58 @@
 # tauri-zero
 
-> 企业级 Tauri 2 + React 19 + Vite 开箱即用脚手架（渐进式建设中）。
+> 零配置、零样板、零决策的 Tauri 2 + React 19 脚手架。clone 即用，你只写业务。
 
-## ✨ 更新亮点（P1 企业级骨架）
+[![CI](https://github.com/TheShining/tauri-zero/actions/workflows/ci.yml/badge.svg)](https://github.com/TheShining/tauri-zero/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-本轮落地 P1 企业级前端 + Rust 骨架，所有检查项均已验证通过（`pnpm lint` / `pnpm typecheck` / `pnpm format:check` / `pnpm rust:check` / `pnpm rust:clippy` 全绿）。
+## 为什么是 tauri-zero
 
-### 前端骨架
-- **路由**：react-router v8（单包导入，`createBrowserRouter` + 懒加载 + 布局路由）
-- **状态管理**：zustand v5 + persist（`useAppStore` / `useUserStore`）
-- **请求层**：`@tauri-apps/plugin-http` 传输层 + 自封装 axios 风格拦截器（请求/响应/错误拦截器，默认注入 token 与 baseURL）
-- **UI 组件库**：Ant Design v6（`ConfigProvider` 主题 + 暗色模式 + locale）
-- **国际化**：i18next + react-i18next（zh-CN / en-US）
-- **错误边界**：`ErrorBoundary` + `AppFeedback`（message/notification 统一封装）
+`create-tauri-app` 给你一个能跑的空白模板；tauri-zero 给你一个能交付的应用骨架。
 
-### Rust 骨架
-- **日志**：tauri-plugin-log（stdout + LogDir 文件日志）
-- **统一错误**：thiserror 定义 `AppError` / `AppResult`
-- **全局状态**：tokio RwLock 定义 `AppState` / `SharedState`
-- **命令模块化**：`commands/{mod,greet,app}.rs`
-- **安全加固**：CSP + capability 最小权限（`http:default`）
+路由、状态、请求、国际化、日志、错误处理、CSP 安全、CI/CD、自动更新——这些"标配"都替你配好了。
 
-### 技术选型说明
-- 路由统一从 `react-router` 导入（v8 单包，不再使用 `react-router-dom`）
-- 请求层基于 `@tauri-apps/plugin-http` 自封装，不引入 axios
-- UI 统一使用 Ant Design v6（原计划 Arco Design 已替换）
+- **个人开发者**：5 分钟起一个结构清晰、工程化完备的桌面应用。
+- **企业团队**：直接获得 lint / format / commit 规范 / 测试 / CI / 自动更新的完整质量门禁。
 
-## ✨ 更新亮点（P0 工程化基线）
+## 特性
 
-本轮为脚手架奠定团队协作与质量门禁基础，所有检查项均已验证通过（pnpm lint / pnpm typecheck / pnpm format:check 全绿，git hooks 已就位）。
+**前端** — react-router v8 · zustand v5 · plugin-http 请求层 · Ant Design v6 · i18next 中英双语 · ErrorBoundary
 
-### 代码规范与格式化
-- 引入 **ESLint 9** flat config：@eslint/js recommended + typescript-eslint（类型化规则）+ eslint-plugin-react / react-hooks / react-refresh
-- 接入 **Prettier 3**，并通过 eslint-config-prettier 关闭与 Prettier 冲突的格式化规则
-- VS Code 保存即 Prettier 格式化 + ESLint 自动修复（.prettierrc.json 统一缩进 / 换行 / 字符集）
+**Rust 端** — tauri-plugin-log · thiserror 统一错误 · tokio 全局状态 · 命令模块化 · CSP 安全加固
 
-### Git 提交规范
-- commitlint（Conventional Commits）约束提交信息：type 白名单 + header ≤ 100
-- simple-git-hooks 自动安装 pre-commit（→ lint-staged）与 commit-msg（→ commitlint）
-- lint-staged 仅对暂存文件执行 eslint --fix + prettier --write，保证提交质量且不拖慢开发
+**工程化** — ESLint 9 + Prettier 3 + Stylelint 17 · commitlint + git hooks · 多环境变量 · React Compiler
 
-### Rust 端规范
-- 新增 src-tauri/rustfmt.toml、clippy.toml、.cargo/config.toml
-- 新增脚本 rust:fmt / rust:fmt:check / rust:clippy（-D warnings）/ rust:check
-
-### 前端目录分层
-- 建立 src/{api,components,hooks,layouts,locales,pages,router,stores,styles,types,utils} 分层骨架（含 .gitkeep），为 P1 业务骨架做准备
-
-### 工程化脚本与配置
-- package.json 新增 lint / lint:fix / format / format:check / typecheck / prepare
-- engines 约束 Node ≥ 20、pnpm ≥ 9
-- pnpm-workspace.yaml 显式放行 esbuild、simple-git-hooks 构建脚本
-
-### 顺手修复
-- 修正 src/App.tsx 浮动 Promise（void greet();）以保持 lint 基线干净
-- .gitignore 放行 .vscode/settings.json 入库；所有配置文件统一无 BOM、LF 结尾
-
-## 🔧 P1 前补充（React 19.2 / React Compiler / Stylelint / 多环境）
-
-进入 P1 业务骨架前，补齐四项工程基线。验证：`pnpm typecheck` / `pnpm lint` / `pnpm stylelint` / `pnpm format:check` / `pnpm build` 全部通过。
-
-### React 19.2
-- 升级 `react` / `react-dom` 至 19.2，`@types/react` / `@types/react-dom` 同步
-
-### React Compiler（正式版）
-- 接入 `babel-plugin-react-compiler@1.0.0`，通过 `@vitejs/plugin-react` 的 babel 配置在编译期自动 memoize
-- 接入 `eslint-plugin-react-compiler`：校验 React 规则违反（先 `warn`，后续收紧为 `error`）
-
-### Stylelint
-- 接入 `stylelint@17` + `stylelint-config-standard@40`，`.stylelintrc.json` / `.stylelintignore`
-- `lint-staged` 新增 `*.{css,scss}` → `stylelint --fix` + `prettier --write`
-- 新增 `pnpm stylelint` / `pnpm stylelint:fix`（带 `--allow-empty-input`，P1 样式落地前不报错）
-- 说明：`src/App.css` 为 Tauri 模板残留，P1 前端骨架将替换，暂列入 `.stylelintignore`
-
-### 多环境变量（dev / test / prod）
-- 新增 `.env` / `.env.development` / `.env.test` / `.env.production`，统一 `VITE_APP_TITLE` / `VITE_APP_ENV` / `VITE_API_BASE_URL`
-- `src/vite-env.d.ts` 补充 `ImportMetaEnv` 类型，`import.meta.env` 全程有类型提示
-- `.gitignore` / `.prettierignore` 放行 `.env.*` 入库、忽略 `.env.local` / `.env.*.local`（本地密钥）
-- 新增脚本：`pnpm dev:test`、`pnpm build:test`、`pnpm build:prod`
-
-## 技术栈
-
-- **桌面框架**: Tauri 2
-- **前端**: React 19.2 + TypeScript 5.8 + Vite 7
-- **路由**: react-router v8
-- **状态管理**: zustand v5
-- **请求层**: @tauri-apps/plugin-http（自封装拦截器）
-- **UI 组件库**: Ant Design v6
-- **国际化**: i18next + react-i18next
-- **Rust 端**: tauri-plugin-log / thiserror / tokio
-- **包管理**: pnpm（workspace 模式）
+**持久化与发布** — sqlx + SQLite · 文件系统/对话框/通知/剪贴板/Shell 插件 · 三平台 CI/CD + release-please + 自动更新
 
 ## 快速开始
 
-> 前置: Node >= 20、pnpm >= 9、Rust toolchain（`rustup`）。
-
 ```bash
-pnpm install            # 安装前端依赖（含 git hooks）
-pnpm tauri dev          # 启动开发
-pnpm tauri build        # 打包
+git clone https://github.com/TheShining/tauri-zero.git
+cd tauri-zero
+pnpm install
+pnpm tauri dev
 ```
 
-## 脚本
+需要 Node ≥ 20、pnpm ≥ 9、Rust stable。
 
-| 脚本 | 说明 |
-| --- | --- |
-| `pnpm dev` | 仅启动前端 Vite（development 模式，加载 `.env.development`） |
-| `pnpm dev:test` | 以 test 模式启动 Vite（加载 `.env.test`） |
-| `pnpm build` | 类型检查 + 前端构建（production） |
-| `pnpm build:test` / `pnpm build:prod` | 以 test / production 模式构建 |
-| `pnpm tauri dev` / `pnpm tauri build` | Tauri 开发 / 打包 |
-| `pnpm lint` / `pnpm lint:fix` | ESLint 检查 / 自动修复 |
-| `pnpm format` / `pnpm format:check` | Prettier 格式化 / 检查 |
-| `pnpm stylelint` / `pnpm stylelint:fix` | Stylelint 检查 / 自动修复 |
-| `pnpm typecheck` | `tsc --noEmit` 类型检查 |
-| `pnpm rust:fmt` / `pnpm rust:fmt:check` | Rust 格式化 / 检查 |
-| `pnpm rust:clippy` | Clippy 检查（`-D warnings`） |
-| `pnpm rust:check` | `cargo check` |
+## 使用指南
 
-## 工程化基线（P0 已落地）
-
-- **代码规范**: ESLint 9 (flat config) + TypeScript-ESA + React 插件 + React Compiler 校验 + Prettier 3（`eslint-config-prettier` 关闭冲突规则）
-- **样式规范**: Stylelint 17 + `stylelint-config-standard`，lint-staged 对 `*.{css,scss}` 跑 `stylelint --fix`
-- **编辑器**: VS Code 推荐插件 + 保存即 Prettier 格式化 / ESLint 自动修复
-- **Git 提交规范**: `commitlint` (Conventional Commits) + `simple-git-hooks` (pre-commit → `lint-staged`，commit-msg → `commitlint`)
-- **暂存区检查**: `lint-staged` 对 `*.{ts,tsx,js,...}` 跑 ESLint --fix + Prettier --write
-- **Rust 规范**: `src-tauri/rustfmt.toml` + `clippy.toml` + `.cargo/config.toml`
-- **多环境**: `.env` / `.env.{development,test,production}` + `import.meta.env` 类型化
-
-提交信息须遵循 Conventional Commits：
-
-```
-<type>(<scope>): <subject>
-
-type: feat | fix | docs | style | refactor | perf | test | build | ci | chore | revert
-```
-
+完整的功能使用说明见 [guide/](guide/README.md)：路由、状态管理、请求层、国际化、Rust 命令、SQLite 持久化、系统插件、自动更新、环境变量、测试与 CI/CD。
 ## 目录结构
 
 ```
 tauri-zero/
+├── src/                 # 前端源码（api / components / pages / router / stores / locales）
+├── src-tauri/           # Rust 端（commands / capabilities / tauri.conf.json）
 ├── .github/workflows/   # CI / release 工作流
-├── src/                 # 前端源码
-│   ├── api/             # 请求层（plugin-http 传输 + 拦截器）
-│   │   ├── client.ts    #   fetch 传输层封装
-│   │   ├── request.ts   #   拦截器 + request<T>() 统一入口
-│   │   ├── types.ts     #   ApiResponse / RequestConfig 类型
-│   │   └── modules/     #   业务 API 模块
-│   ├── components/      # 通用组件（ErrorBoundary / ThemeToggle / LocaleSwitch / AppFeedback）
-│   ├── layouts/         # 布局（BasicLayout）
-│   ├── locales/         # 国际化资源（zh-CN / en-US）
-│   ├── pages/           # 路由页面（Home / NotFound）
-│   ├── router/          # 路由配置（createBrowserRouter）
-│   ├── stores/          # 状态管理（useAppStore / useUserStore）
-│   ├── i18n.ts          # i18next 初始化
-│   ├── App.tsx          # ConfigProvider + ErrorBoundary + AppRouter
-│   └── main.tsx         # 挂载入口
-├── src-tauri/           # Rust 端
-│   ├── src/
-│   │   ├── commands/    # 命令模块（greet / app）
-│   │   ├── error.rs     # AppError / AppResult
-│   │   ├── state.rs     # AppState / SharedState
-│   │   ├── lib.rs       # Builder 装配
-│   │   └── main.rs      # 入口
-│   ├── capabilities/    # 权限（http:default）
-│   ├── tauri.conf.json  # CSP 安全配置
-│   ├── Cargo.toml
-│   ├── rustfmt.toml
-│   ├── clippy.toml
-│   └── .cargo/config.toml
-├── .env / .env.development / .env.test / .env.production
-├── .stylelintrc.json
-├── eslint.config.js
-├── .prettierrc.json
-├── commitlint.config.js
 ├── CONTRIBUTING.md
-├── LICENSE
-└── package.json
+└── LICENSE
 ```
 
-## 路线图
+## 贡献
 
-- [x] **P0** 工程化基线
-- [x] **P0 增补** React 19.2 / React Compiler / Stylelint / 多环境变量
-- [x] **P1** 前端骨架
-- [x] **P1** Rust 骨架
-- [x] **P2** 持久化（sqlx）/ 文件系统 / 系统插件 / 自动更新 / 测试最小集
-- [x] **P3** CI/CD + 自动更新分发 + 文档完善
-- [ ] **P4** 可观测性（错误上报 / 性能监控）
+欢迎贡献，请先阅读 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
-## CI/CD
+## License
 
-- PR 与 push main 触发 `.github/workflows/ci.yml`，三平台矩阵运行 lint / typecheck / test / rust:check / rust:clippy / rust:test。
-- release-please 自动创建 release PR、bump 版本并生成 changelog。
-- 打 `v*` tag 触发 `.github/workflows/release.yml`，三平台构建并上传 GitHub Release。
-
-## 自动更新
-
-- 使用 `tauri-plugin-updater`，更新清单托管在 GitHub Releases。
-- 签名私钥通过 GitHub Secret `TAURI_SIGNING_PRIVATE_KEY` 注入，私钥文件 `src-tauri/updater.key` 已 gitignore。
-
-## 调试（VS Code，F5）
-
-已内置 `.vscode/launch.json` + `tasks.json`，配合 CodeLLDB 实现一键调试。
-
-### 调试 Rust 后端
-1. 安装推荐扩展 `vadimcn.vscode-lldb`（VS Code 首次打开会提示）
-2. 调试面板选择 **Debug Tauri (Rust)** → 按 `F5`
-3. VS Code 先起 Vite（端口 1420），再用 LLDB 启动 debug 二进制（加载 http://localhost:1420）
-4. 在 `src-tauri/src/*.rs` 打断点即可命中
-
-### 调试前端（React/TS，WebView 内断点）
-Rust 调试通过 `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=9222` 开启了 WebView2 调试端口：
-1. 先 `F5` 启动 **Debug Tauri (Rust)**，等窗口出现
-2. 调试面板选择 **Attach to Tauri WebView (Frontend)** → 运行（最多等待 30s 连上 9222）
-3. 在 `src/**/*.tsx` 打断点即可命中
-
-> 也可在运行的应用里右键 → Inspect（或 `F12`）打开 WebView2 DevTools。
-
-## IDE 设置
-
-安装推荐扩展（VS Code 打开时自动提示）：Tauri、rust-analyzer、ESLint、Prettier。
-
-## 📦 包体积分析（Bundle Analysis）
-
-项目内置 `rollup-plugin-visualizer` 作为开发工具，用于分析打包产物体积。
-
-### 使用方法
-
-1. 执行构建：
-
-   ```bash
-   pnpm build
-   ```
-
-2. 构建完成后，`bundle-analysis/stats.html` 会生成交互式体积树状图（treemap）。
-
-3. 用浏览器打开 `bundle-analysis/stats.html`，即可查看每个模块的压缩前 / gzip / brotli 体积占比，快速定位大依赖。
-
-> 说明：`bundle-analysis/` 已被 `.gitignore` 忽略，分析产物不会提交到仓库。若需临时关闭分析，可移除 `vite.config.ts` 中的 `visualizer` 插件。
+[MIT](LICENSE)
