@@ -8,7 +8,7 @@ tauri-zero 用三个 GitHub Actions 工作流串起「质量门禁 → 自动发
 | --- | --- | --- | --- |
 | CI | `.github/workflows/ci.yml` | PR 与 push 到 `main` | 质量门禁：lint / typecheck / test / Rust 检查 |
 | release-please | `.github/workflows/release-please.yml` | push 到 `main` | 自动发版：算版本号、生成 changelog、创建 release PR 与 tag |
-| release | `.github/workflows/release.yml` | push `v*` tag | 构建分发：三平台打包、签名、上传产物与更新清单 |
+| release | `.github/workflows/release.yml` | push `v*` tag，或手动 `workflow_dispatch` | 构建分发：三平台打包、签名、上传产物与更新清单 |
 
 三者关系：
 
@@ -25,6 +25,8 @@ tauri-zero 用三个 GitHub Actions 工作流串起「质量门禁 → 自动发
                                    │
                                    └─ 客户端 UpdateChecker 拉取清单 → 自动更新
 ```
+
+> 注意：release-please 必须使用 PAT（`RELEASE_PLEASE_TOKEN`）而不是 `GITHUB_TOKEN`，否则它打 tag 后不会触发 `release` 工作流。详见下文「配置 RELEASE_PLEASE_TOKEN」。
 
 ### CI（质量门禁）
 
@@ -47,9 +49,17 @@ lint → typecheck → test → rust:check → rust:clippy → rust:test
 
 > 版本号同步规则见 `release-please-config.json` 与 `.release-please-manifest.json`。
 
+> 只有 `feat` / `fix` / `BREAKING CHANGE` 会触发版本 bump；`chore`、`docs`、`style`、`refactor`、`perf`、`test`、`build`、`ci` 等前缀不会发版。
+
 ### release（构建分发）
 
 `.github/workflows/release.yml` 在推送 `v*` tag 时触发，三平台构建并上传产物（含 updater 的 `.json` 清单）。
+
+此外支持手动触发（`workflow_dispatch`），用于给已存在的 release 补传产物：
+
+1. 打开 GitHub 仓库 → **Actions** → 左侧选 **release** → **Run workflow**。
+2. 在 `tag` 输入框填写要构建的 tag（如 `v0.2.0`）。
+3. 点击 **Run workflow**，三平台会重新构建并把产物上传到该 tag 对应的 release。
 
 ## 自动更新签名密钥
 
@@ -88,6 +98,24 @@ pnpm tauri signer generate -w src-tauri/updater.key
    ```
 
 > 若生成密钥时设置了密码，还需额外配置 `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` secret。
+
+### 配置 RELEASE_PLEASE_TOKEN
+
+GitHub 的 `GITHUB_TOKEN` 触发的事件不会再次触发新的 workflow（防递归）。因此 release-please 若用 `GITHUB_TOKEN` 打 tag，`release` 工作流不会被触发，导致 release 没有编译产物。
+
+解决方法是给 release-please 配置一个 PAT（Personal Access Token）：
+
+1. 在 GitHub 生成一个 PAT：**Settings → Developer settings → Personal access tokens → Tokens (classic)**，勾选 `repo` 与 `workflow` 权限。
+2. 打开仓库 → **Settings → Secrets and variables → Actions → New repository secret**。
+3. 新建名为 `RELEASE_PLEASE_TOKEN` 的 secret，粘贴 PAT。
+4. `release-please.yml` 已使用该 secret：
+
+   ```yaml
+   with:
+     token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+   ```
+
+> 用 PAT 触发的 tag/release 事件会被视为真实用户操作，从而正常触发下游 `release` 工作流。
 
 ### 本地打包
 
