@@ -1,10 +1,12 @@
-# 使用指南
+# 使用指南 / Guides
 
-tauri-zero 是一个开箱即用的 Tauri 2 + React 19 脚手架。本指南按功能模块介绍如何使用，帮助你快速上手并扩展业务。
+tauri-zero 是一个开箱即用的 Tauri 2 + React 19 桌面应用脚手架（starter / boilerplate）。本指南按功能模块介绍如何使用，帮助你快速上手并扩展业务。
 
-## 目录
+tauri-zero is a zero-config Tauri 2 + React 19 desktop app starter. These guides walk through each module to help you get started and extend the app.
 
-- [快速开始](./quick-start.md)
+## 目录 / Contents
+
+- [快速开始](./quick-start.md) — Quick Start
 - [前端开发](./frontend.md) — 路由、状态管理、请求层、国际化、通用组件
 - [Rust 端开发](./rust.md) — 命令、错误处理、全局状态、SQLite 持久化
 - [系统能力](./plugins.md) — 文件系统、对话框、通知、剪贴板、Shell、自动更新
@@ -12,7 +14,7 @@ tauri-zero 是一个开箱即用的 Tauri 2 + React 19 脚手架。本指南按�
 - [测试](./testing.md) — 前端 Vitest 与 Rust 测试
 - [CI/CD 与发布](./ci-cd.md) — 质量门禁、自动发版、自动更新分发
 
-## 目录结构速览
+## 目录结构速览 / Structure
 
 ```
 src/                 # 前端源码
@@ -33,7 +35,7 @@ src-tauri/           # Rust 端
   capabilities/      # 权限声明
 ```
 
-## 约定
+## 约定 / Conventions
 
 - 前端请求统一走 `src/api/request.ts` 的 `request<T>()`，不要直接 `fetch`。
 - Rust 命令统一返回 `AppResult<T>`，错误通过 `AppError` 序列化给前端。
