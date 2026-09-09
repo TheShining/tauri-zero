@@ -9,6 +9,7 @@ lerna-debug.log*
 docs
 
 node_modules
+.pnpm-store
 dist
 dist-ssr
 bundle-analysis

@@ -5,6 +5,8 @@ import { visualizer } from "rollup-plugin-visualizer";
 // @ts-expect-error process is a nodejs global
 const host = process.env.TAURI_DEV_HOST;
 
+const normalizeId = (id: string) => id.replace(/\\/g, "/");
+
 // https://vite.dev/config/
 export default defineConfig(async () => ({
   plugins: [
@@ -23,25 +25,53 @@ export default defineConfig(async () => ({
   ],
 
   build: {
-    rollupOptions: {
+    rolldownOptions: {
       output: {
-        manualChunks(id: string) {
-          if (!id.includes("node_modules")) return undefined;
-          if (id.includes("/react-router/")) return "router-vendor";
-          if (id.includes("/react-i18next/") || id.includes("/i18next/")) return "i18n-vendor";
-          if (id.includes("/react-dom/") || id.includes("/scheduler/") || id.includes("/react/"))
-            return "react-vendor";
-          if (id.includes("/zustand/")) return "state-vendor";
-          if (
-            id.includes("/antd/") ||
-            id.includes("@ant-design") ||
-            id.includes("@rc-component") ||
-            id.includes("@babel/runtime") ||
-            id.includes("/stylis/")
-          ) {
-            return "antd-vendor";
-          }
-          return undefined;
+        codeSplitting: {
+          groups: [
+            {
+              name: "router-vendor",
+              test: (id: string) => normalizeId(id).includes("/react-router/"),
+              priority: 50,
+            },
+            {
+              name: "i18n-vendor",
+              test: (id: string) => {
+                const n = normalizeId(id);
+                return n.includes("/react-i18next/") || n.includes("/i18next/");
+              },
+              priority: 40,
+            },
+            {
+              name: "react-vendor",
+              test: (id: string) => {
+                const n = normalizeId(id);
+                return (
+                  n.includes("/react-dom/") || n.includes("/scheduler/") || n.includes("/react/")
+                );
+              },
+              priority: 30,
+            },
+            {
+              name: "state-vendor",
+              test: (id: string) => normalizeId(id).includes("/zustand/"),
+              priority: 20,
+            },
+            {
+              name: "antd-vendor",
+              test: (id: string) => {
+                const n = normalizeId(id);
+                return (
+                  n.includes("/antd/") ||
+                  n.includes("@ant-design") ||
+                  n.includes("@rc-component") ||
+                  n.includes("@babel/runtime") ||
+                  n.includes("/stylis/")
+                );
+              },
+              priority: 10,
+            },
+          ],
         },
       },
     },

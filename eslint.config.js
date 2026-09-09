@@ -1,7 +1,6 @@
 import js from "@eslint/js";
 import tseslint from "typescript-eslint";
-import react from "eslint-plugin-react";
-import reactHooks from "eslint-plugin-react-hooks";
+import eslintReact from "@eslint-react/eslint-plugin";
 import reactRefresh from "eslint-plugin-react-refresh";
 import reactCompiler from "eslint-plugin-react-compiler";
 import prettier from "eslint-config-prettier";
@@ -27,28 +26,19 @@ export default tseslint.config(
   // React 项目配置
   {
     files: ["src/**/*.{ts,tsx}"],
-    ...react.configs.flat.recommended,
-    ...react.configs.flat["jsx-runtime"],
-    settings: {
-      react: { version: "detect" },
-    },
+    extends: [eslintReact.configs["recommended-typescript"]],
     plugins: {
-      "react-hooks": reactHooks,
       "react-refresh": reactRefresh,
       "react-compiler": reactCompiler,
     },
     rules: {
-      ...reactHooks.configs.recommended.rules,
       "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
-      "react/prop-types": "off",
-      // React Compiler：编译期自动优化；此规则校验 React 规则违反，先 warn，后续收紧为 error
       "react-compiler/react-compiler": "warn",
-      // Tauri 项目通常允许 any 在边界处，按需收紧
       "@typescript-eslint/no-explicit-any": "warn",
     },
   },
 
-  // 配置文件（非项目内 TS）
+  // 配置文件（非项目 TS）
   {
     files: ["*.config.{ts,js,mjs}", "vite.config.ts", "eslint.config.js", "scripts/**/*.mjs"],
     ...tseslint.configs.disableTypeChecked,
