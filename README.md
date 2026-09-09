@@ -28,7 +28,7 @@ Routing, state, requests, i18n, logging, error handling, CSP security, CI/CD, au
 
 **Rust 端 / Backend** — tauri-plugin-log · thiserror 统一错误 · tokio 全局状态 · 命令模块化 · CSP 安全加固
 
-**工程化 / Engineering** — ESLint 9 + Prettier 3 + Stylelint 17 · commitlint + git hooks · 多环境变量 · React Compiler
+**工程化 / Engineering** — ESLint 10 + Prettier 3 + Stylelint 17 · commitlint + git hooks · 多环境变量 · React Compiler
 
 **持久化与发布 / Persistence & Release** — sqlx + SQLite · 文件系统/对话框/通知/剪贴板/Shell 插件 · 三平台 CI/CD + release-please + 自动更新
 
@@ -41,9 +41,9 @@ pnpm install
 pnpm tauri dev
 ```
 
-需要 Node ≥ 20、pnpm ≥ 9、Rust stable。
+需要 Node ≥ 22、pnpm ≥ 9、Rust stable。
 
-Requires Node ≥ 20, pnpm ≥ 9, and Rust stable.
+Requires Node ≥ 22, pnpm ≥ 9, and Rust stable.
 
 ## 使用指南 / Guides
 

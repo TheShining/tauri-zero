@@ -2,7 +2,7 @@
 
 ## 环境要求
 
-- Node >= 20
+- Node >= 22
 - pnpm >= 9
 - Rust stable（edition 2021）
 
