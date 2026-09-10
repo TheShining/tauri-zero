@@ -7,9 +7,21 @@ const host = process.env.TAURI_DEV_HOST;
 
 const normalizeId = (id: string) => id.replace(/\\/g, "/");
 
+// 开发模式自动注入独立 React DevTools（localhost:8097），生产构建不带
+function reactDevtools() {
+  return {
+    name: "react-devtools-inject",
+    apply: "serve",
+    transformIndexHtml(html) {
+      return html.replace("<head>", '<head>\n    <script src="http://localhost:8097"></script>');
+    },
+  };
+}
+
 // https://vite.dev/config/
 export default defineConfig(async () => ({
   plugins: [
+    reactDevtools(),
     react({
       babel: {
         // React Compiler 正式版：编译期自动 memoize，需遵循 React 规则
