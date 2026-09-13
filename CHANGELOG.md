@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.3.0](https://github.com/TheShining/tauri-zero/compare/v0.2.0...v0.3.0) (2026-09-13)
+
+
+### Features
+
+* add system tray — custom HTML popup menu, theme/locale sync, close-to-tray ([8a9ad71](https://github.com/TheShining/tauri-zero/commit/8a9ad712fc28bc4b307b55c4286756486fb990c2))
+* 添加系统托盘功能 — 自定义HTML弹窗菜单、主题/语言同步、关闭最小化到托盘 ([8a9ad71](https://github.com/TheShining/tauri-zero/commit/8a9ad712fc28bc4b307b55c4286756486fb990c2))
+* 集成独立 React DevTools 开发调试 / integrate standalone React DevTools for development ([db54518](https://github.com/TheShining/tauri-zero/commit/db54518cc780ea7672648bc009d2b0cb20080a97))
+
+
+### Bug Fixes
+
+* 升级 react-devtools v8 修复选取元素白屏 / upgrade react-devtools v8 fixing inspect crash ([d36e079](https://github.com/TheShining/tauri-zero/commit/d36e0796a0c7135d299a0e2d589ce7a4d42d166b))
+
 ## [0.2.0](https://github.com/TheShining/tauri-zero/compare/tauri-zero-v0.1.0...tauri-zero-v0.2.0) (2026-09-04)
 
 
