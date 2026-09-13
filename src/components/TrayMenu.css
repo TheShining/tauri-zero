@@ -1,0 +1,64 @@
+/* ===== Tray popup global reset ===== */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  background: var(--tray-window-bg, #fff);
+  overflow: hidden;
+  user-select: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  html,
+  body {
+    background: var(--tray-window-bg, #141414);
+  }
+}
+
+#root {
+  background: var(--tray-window-bg, #fff);
+}
+
+/* ===== Tray menu ===== */
+
+.tray-menu {
+  width: 200px;
+  padding: 6px;
+  list-style: none;
+  border-radius: 8px;
+  font-size: 14px;
+  user-select: none;
+  cursor: default;
+  overflow: hidden;
+}
+
+.tray-menu-item {
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  line-height: 22px;
+  transition: background 0.15s ease;
+}
+
+.tray-menu-item:hover {
+  background: var(--tray-hover-bg);
+}
+
+.tray-menu-item-danger {
+  color: var(--tray-danger-color);
+}
+
+.tray-menu-item-danger:hover {
+  background: var(--tray-danger-bg);
+}
+
+.tray-menu-divider {
+  height: 1px;
+  margin: 4px 8px;
+  background: var(--tray-divider-color);
+}

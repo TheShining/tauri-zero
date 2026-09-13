@@ -1,17 +1,19 @@
 use sqlx::SqlitePool;
-use std::sync::Arc;
-use tokio::sync::RwLock;
+use std::sync::{Arc, RwLock};
+use tokio::sync::RwLock as AsyncRwLock;
 
 pub struct AppState {
-    pub counter: RwLock<i64>,
+    pub counter: AsyncRwLock<i64>,
     pub db: SqlitePool,
+    pub close_to_tray: RwLock<bool>,
 }
 
 impl AppState {
     pub fn new(db: SqlitePool) -> Self {
         Self {
-            counter: RwLock::new(0),
+            counter: AsyncRwLock::new(0),
             db,
+            close_to_tray: RwLock::new(true),
         }
     }
 }

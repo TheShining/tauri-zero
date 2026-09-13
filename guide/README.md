@@ -10,6 +10,7 @@ tauri-zero is a zero-config Tauri 2 + React 19 desktop app starter. These guides
 - [前端开发](./frontend.md) — 路由、状态管理、请求层、国际化、通用组件
 - [Rust 端开发](./rust.md) — 命令、错误处理、全局状态、SQLite 持久化
 - [系统能力](./plugins.md) — 文件系统、对话框、通知、剪贴板、Shell、自动更新
+- [系统托盘](./system-tray.md) — 托盘菜单、关闭最小化、主题/语言同步
 - [环境变量](./env.md) — 多环境配置与类型化 `import.meta.env`
 - [测试](./testing.md) — 前端 Vitest 与 Rust 测试
 - [CI/CD 与发布](./ci-cd.md) — 质量门禁、自动发版、自动更新分发
