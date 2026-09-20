@@ -139,6 +139,28 @@ pnpm build:prod   # production
 
 注意命名语义：`pnpm tauri:test` 是“用 test 环境启动桌面应用”，不是执行测试。执行 Rust 测试请使用 `pnpm rust:test`，它会强制设置 `APP_ENV=test`，让测试读取 `.env.test`。
 
+## 打包文件名
+
+`pnpm tauri:build:dev` 和 `pnpm tauri:build:test` 会在 Tauri 打包成功后，把本次新生成产物中的架构标记后面加上环境后缀。`productName` 保持 `tauri-zero` 不变：
+
+| 命令 | 产物命名效果 |
+| --- | --- |
+| `pnpm tauri:build` | `tauri-zero_0.3.0_x64-setup.exe` |
+| `pnpm tauri:build:dev` | `tauri-zero_0.3.0_x64_dev-setup.exe` |
+| `pnpm tauri:build:test` | `tauri-zero_0.3.0_x64_test-setup.exe` |
+
+常见产物示例：
+
+```text
+NSIS: tauri-zero_0.3.0_x64_dev-setup.exe
+MSI:   tauri-zero_0.3.0_x64_test_en-US.msi
+DEB:   tauri-zero_0.3.0_amd64_dev.deb
+```
+
+不同平台的完整命名规则略有差异；脚本会把 `dev` / `test` 插到 `x64`、`amd64`、`arm64`、`aarch64`、`universal` 这类架构标记之后。这个处理只作用于本次新生成或被覆盖的 bundle 文件，不会重命名历史产物，也不影响 `pnpm tauri:dev` / `pnpm tauri:test` 的开发会话。
+
+注意：这是文件名层面的后置处理，`productName`、安装器显示名称和主程序名称都保持不变。production 发布仍使用 Tauri 原生命名，因此自动更新流程不受影响。
+
 ## 构建缓存
 
 `build.rs` 对所有候选 `.env*` 文件输出 `cargo:rerun-if-changed`，新增或修改这些文件会触发 Rust 重新编译。环境变量是启动 / 构建时读取，不提供运行时热更新；修改后需要重新启动 dev 会话或重新打包。

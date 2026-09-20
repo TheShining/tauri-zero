@@ -52,3 +52,12 @@ pnpm tauri:build:test
 ```
 
 产物位于 `src-tauri/target/release/bundle/`。环境变量在构建时注入，目标机器不需要 `.env` 文件。
+
+development 和 test 打包会把环境后缀加在架构标记后面：
+
+```text
+pnpm tauri:build:dev   → tauri-zero_0.3.0_x64_dev-setup.exe
+pnpm tauri:build:test  → tauri-zero_0.3.0_x64_test-setup.exe
+```
+
+production 打包保持 `tauri-zero_0.3.0_x64-setup.exe` 不变。
