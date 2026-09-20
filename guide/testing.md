@@ -18,7 +18,17 @@ pnpm test
 pnpm rust:test
 ```
 
-示例见 `src-tauri/src/error.rs` 的 `#[cfg(test)]` 模块。
+当前 Rust 测试包括：
+
+- `domain/note/repo.rs`：使用内存 SQLite 验证 CRUD 与 not found 场景；
+- `domain/note/model.rs`：验证领域模型序列化；
+- `error.rs`：验证 `AppError` 序列化格式。
+
+新业务域建议至少覆盖：
+
+1. repository 的 CRUD 与 not found；
+2. service 的参数校验与业务规则；
+3. error 序列化格式（新增错误类型时）。
 
 ## 质量门禁
 

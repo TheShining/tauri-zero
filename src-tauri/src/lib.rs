@@ -1,10 +1,14 @@
 mod commands;
+mod config;
 mod db;
+mod domain;
 mod error;
+mod platform;
 mod state;
-mod tray;
+mod utils;
 
-use state::AppState;
+use config::AppConfig;
+use state::{ConfigState, CounterState, DbState};
 use std::sync::Arc;
 use tauri::Manager;
 use tauri_plugin_log::{Target, TargetKind};
@@ -12,6 +16,7 @@ use tauri_plugin_log::{Target, TargetKind};
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        // --- 基础设施 ---
         .plugin(
             tauri_plugin_log::Builder::new()
                 .targets([
@@ -24,29 +29,37 @@ pub fn run() {
                 .build(),
         )
         .plugin(tauri_plugin_http::init())
+        // --- 系统能力 ---
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_shell::init())
+        // --- 自动更新 ---
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
         .setup(|app| {
+            // 1. 加载配置
+            let config = AppConfig::load();
+            // 2. 初始化数据库
             let app_data_dir = app.path().app_data_dir()?;
             std::fs::create_dir_all(&app_data_dir)?;
-            let db_path = app_data_dir.join("tauri-zero.db");
-            let pool = tauri::async_runtime::block_on(db::init_pool(&db_path))
+            let db_path = app_data_dir.join(&config.db_filename);
+            let pool =
+                tauri::async_runtime::block_on(db::init_pool(&db_path, config.db_max_connections))
+                    .map_err(|e| std::io::Error::other(e.to_string()))?;
+            // 3. 注册 State
+            app.manage(Arc::new(DbState::new(pool)));
+            app.manage(Arc::new(ConfigState::new(config.default_close_to_tray)));
+            app.manage(Arc::new(CounterState::new()));
+            // 4. 平台模块初始化
+            platform::tray::create_tray(app.handle())
                 .map_err(|e| std::io::Error::other(e.to_string()))?;
-            app.manage(Arc::new(AppState::new(pool)));
-
-            // Create system tray (custom popup, no native menu)
-            tray::create_tray(app.handle()).map_err(|e| std::io::Error::other(e.to_string()))?;
-
             Ok(())
         })
         .on_window_event(|window, event| match event {
             tauri::WindowEvent::CloseRequested { api, .. } if window.label() == "main" => {
-                let state = window.app_handle().state::<Arc<AppState>>();
+                let state = window.app_handle().state::<Arc<ConfigState>>();
                 let close_to_tray = *state.close_to_tray.read().unwrap();
                 if close_to_tray {
                     api.prevent_close();
@@ -58,19 +71,7 @@ pub fn run() {
             }
             _ => {}
         })
-        .invoke_handler(tauri::generate_handler![
-            commands::greet::greet,
-            commands::app::increment_counter,
-            commands::note::list_notes,
-            commands::note::create_note,
-            commands::note::update_note,
-            commands::note::delete_note,
-            commands::fs::read_text_file,
-            commands::fs::write_text_file,
-            commands::fs::file_exists,
-            commands::tray::set_close_to_tray,
-            commands::tray::tray_action
-        ])
+        .invoke_handler(crate::all_handlers!())
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

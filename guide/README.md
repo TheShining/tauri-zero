@@ -8,7 +8,7 @@ tauri-zero is a zero-config Tauri 2 + React 19 desktop app starter. These guides
 
 - [快速开始](./quick-start.md) — Quick Start
 - [前端开发](./frontend.md) — 路由、状态管理、请求层、国际化、通用组件
-- [Rust 端开发](./rust.md) — 命令、错误处理、全局状态、SQLite 持久化
+- [Rust 端开发](./rust.md) — domain/platform 结构、命令注册、错误处理、状态、SQLite 迁移
 - [系统能力](./plugins.md) — 文件系统、对话框、通知、剪贴板、Shell、自动更新
 - [系统托盘](./system-tray.md) — 托盘菜单、关闭最小化、主题/语言同步
 - [环境变量](./env.md) — 多环境配置与类型化 `import.meta.env`
@@ -17,23 +17,28 @@ tauri-zero is a zero-config Tauri 2 + React 19 desktop app starter. These guides
 
 ## 目录结构速览 / Structure
 
-```
-src/                 # 前端源码
-  api/               # 请求封装与接口定义
-  components/        # 通用组件
-  hooks/             # 自定义 hooks
-  layouts/           # 布局
-  locales/           # i18n 文案
-  pages/             # 路由页面
-  router/            # 路由配置
-  stores/            # zustand 状态
-  utils/             # 工具函数
-src-tauri/           # Rust 端
-  src/commands/      # Tauri 命令（按业务域拆分）
-  src/db.rs          # sqlx + SQLite 连接池
-  src/error.rs       # 统一错误类型
-  src/state.rs       # 全局状态
-  capabilities/      # 权限声明
+```text
+src/                    # 前端源码
+  api/                  # 请求封装与接口定义
+  components/           # 通用组件
+  hooks/                # 自定义 hooks
+  layouts/              # 布局
+  locales/              # i18n 文案
+  pages/                # 路由页面
+  router/               # 路由配置
+  stores/               # zustand 状态
+  utils/                # 工具函数
+
+src-tauri/              # Rust 端
+  migrations/           # SQLite schema 迁移
+  src/commands/         # 命令注册入口 + demo 命令
+  src/domain/           # 业务领域（model/repo/service/command）
+  src/platform/         # 平台能力（fs/tray 等）
+  src/state/            # 按职责拆分的全局状态
+  src/config.rs         # 应用配置
+  src/db.rs             # SQLite 连接池 + migrations
+  src/error.rs          # 统一错误类型
+  capabilities/         # 权限声明
 ```
 
 ## 约定 / Conventions
@@ -41,4 +46,6 @@ src-tauri/           # Rust 端
 - 前端请求统一走 `src/api/request.ts` 的 `request<T>()`，不要直接 `fetch`。
 - Rust 命令统一返回 `AppResult<T>`，错误通过 `AppError` 序列化给前端。
 - 新增页面在 `src/pages/` 下创建，并在 `src/router/createAppRouter.tsx` 注册。
-- 新增 Rust 命令在 `src-tauri/src/commands/` 下按业务域建模块，并在 `lib.rs` 的 `invoke_handler` 注册。
+- 新增业务命令放在 `src-tauri/src/domain/<domain>/command.rs`，并在 `commands/mod.rs` 的 `all_handlers!` 中注册。
+- 新增平台命令放在 `src-tauri/src/platform/<capability>.rs`，同样在 `all_handlers!` 中注册。
+- 新增表或字段时，在 `src-tauri/migrations/` 中新增 SQL 迁移文件，不要修改历史迁移。

@@ -1,84 +1,168 @@
 # Rust 端开发
 
-## 命令模块化
+tauri-zero 的 Rust 后端采用「双轨结构」：业务领域代码集中在 `domain/`，平台集成代码集中在 `platform/`。这样后续增加 20+ 业务模块时，不需要把所有东西继续塞进 `commands/`。
 
-Tauri 命令按业务域拆分在 `src-tauri/src/commands/`，通过 `mod.rs` 导出，并在 `lib.rs` 的 `invoke_handler` 注册。
+## 目录结构
+
+```text
+src-tauri/src/
+├── commands/          # 注册入口 + demo 命令
+│   ├── mod.rs         # all_handlers! 宏
+│   ├── app.rs
+│   └── greet.rs
+├── domain/            # 业务领域，按域内聚
+│   └── note/
+│       ├── command.rs # IPC 薄层
+│       ├── service.rs # 业务规则
+│       ├── repo.rs    # SQL 数据访问
+│       └── model.rs   # 领域模型
+├── platform/          # 平台能力，按能力模块平铺
+│   ├── fs.rs
+│   └── tray.rs
+├── state/             # 拆分后的全局状态
+├── config.rs          # 应用配置
+├── db.rs              # SQLite 连接池 + migrations
+└── error.rs           # AppError / AppResult
+```
+
+### commands/
+
+`commands/` 不再承载业务逻辑。它保留 demo 命令，并通过 `all_handlers!` 宏统一生成 `invoke_handler`：
 
 ```rust
-// src-tauri/src/commands/greet.rs
-use crate::error::{AppError, AppResult};
-
-#[tauri::command]
-pub fn greet(name: &str) -> AppResult<String> {
-    if name.is_empty() {
-        return Err(AppError::InvalidInput("name is empty".into()));
-    }
-    Ok(format!("Hello, {name}!"))
+#[macro_export]
+macro_rules! all_handlers {
+    () => {
+        tauri::generate_handler![
+            commands::greet::greet,
+            commands::app::increment_counter,
+            domain::note::command::list_notes,
+            platform::fs::read_text_file,
+            platform::tray::tray_action,
+        ]
+    };
 }
 ```
 
-### 新增命令
+`lib.rs` 中只需：
 
-1. 在 `src-tauri/src/commands/` 下新建模块（如 `user.rs`）。
-2. 在 `mod.rs` 中 `pub mod user;`。
-3. 在 `lib.rs` 的 `invoke_handler` 中注册 `commands::user::xxx`。
-4. 前端在 `src/api/modules/` 中封装 `invoke` 调用。
+```rust
+.invoke_handler(crate::all_handlers!())
+```
+
+新增命令时更新 `commands/mod.rs`，不需要反复修改 `lib.rs`。
+
+## 新增业务域
+
+以 `settings` 为例：
+
+1. 在 `src-tauri/migrations/` 新增一个 SQL 迁移文件；
+2. 创建 `src-tauri/src/domain/settings/`；
+3. 添加 `model.rs`、`repo.rs`、`service.rs`、`command.rs`；
+4. 在 `domain/settings/mod.rs` 声明子模块；
+5. 在 `domain/mod.rs` 添加 `pub mod settings;`；
+6. 在 `commands/mod.rs` 的 `all_handlers!` 中注册 IPC 命令。
+
+推荐分层：
+
+```text
+command.rs  参数提取 + 调用 service
+service.rs  校验 + 业务规则
+repo.rs     SQL + 模型映射
+model.rs    领域模型 / DTO
+```
+
+## 新增平台能力
+
+平台集成代码放在 `src-tauri/src/platform/`，例如：
+
+- `fs.rs`：文件系统 IPC 命令
+- `tray.rs`：托盘图标、事件和动作命令
+
+平台能力通常是事件驱动、强依赖 Tauri API，因此不强制套用 domain 的四层结构。一个能力对应一个模块即可。
 
 ## 统一错误处理
 
-错误类型定义在 `src-tauri/src/error.rs`，使用 `thiserror` 派生，并实现 `Serialize` 以便序列化给前端。
+错误类型定义在 `src-tauri/src/error.rs`，使用 `thiserror` 派生，并实现 `Serialize`：
 
 ```rust
 pub enum AppError {
     NotFound(String),
     InvalidInput(String),
     Internal(String),
+    Database(String),
+    Config(String),
+    Unauthorized,
 }
 
 pub type AppResult<T> = Result<T, AppError>;
 ```
 
-前端 `invoke` 失败时会收到结构化错误对象 `{ kind, code, message }`。
+前端 `invoke` 失败时收到：
+
+```json
+{
+  "kind": "invalid_input",
+  "code": "INVALID_INPUT",
+  "message": "title is empty"
+}
+```
 
 ## 全局状态
 
-全局状态定义在 `src-tauri/src/state.rs`，通过 `tauri::State` 注入命令。
+`src-tauri/src/state.rs` 已拆分为 `src-tauri/src/state/mod.rs`，按职责拆分状态：
 
 ```rust
-pub struct AppState {
-    pub counter: RwLock<i64>,
+pub struct DbState {
     pub db: SqlitePool,
+}
+
+pub struct ConfigState {
+    pub close_to_tray: RwLock<bool>,
+}
+
+pub struct CounterState {
+    pub counter: AsyncRwLock<i64>,
 }
 ```
 
-在命令中访问：
+在 `lib.rs` setup 中分别 `manage()`，命令按需注入对应的 state：
 
 ```rust
 #[tauri::command]
-pub async fn increment_counter(state: tauri::State<'_, SharedState>) -> AppResult<i64> {
-    let mut counter = state.counter.write().await;
-    *counter += 1;
-    Ok(*counter)
+pub async fn list_notes(state: tauri::State<'_, SharedDbState>) -> AppResult<Vec<Note>> {
+    NoteService::list(&state.db).await
 }
 ```
 
-## SQLite 持久化
+不要把所有状态继续合并回一个 God State。状态膨胀时，优先拆成新的小状态结构。
 
-使用 `sqlx` + SQLite，连接池在 `src-tauri/src/db.rs` 初始化，数据库文件位于应用数据目录（`app_data_dir/tauri-zero.db`）。
+## SQLite 持久化与迁移
 
-示例命令见 `src-tauri/src/commands/note.rs`，提供 `list_notes` / `create_note` / `update_note` / `delete_note`。
+使用 `sqlx` + SQLite：
 
-### 新增表
+- 连接池初始化在 `src-tauri/src/db.rs`；
+- 数据库文件位于应用数据目录；
+- schema 由 `src-tauri/migrations/` 下的 SQL 文件管理；
+- 启动时通过 `sqlx::migrate!("./migrations")` 执行迁移。
 
-在 `db.rs` 的 `init_pool` 中追加 `CREATE TABLE IF NOT EXISTS ...`，或使用 sqlx 迁移（migrations）。
+新增表或字段时：
+
+1. 在 `migrations/` 下新增一个带时间戳前缀的 SQL 文件；
+2. 不要手改历史迁移文件；
+3. 在对应 domain 的 `model.rs` 和 `repo.rs` 中更新映射与查询。
+
+示例业务域见 `domain/note/`，提供 `list_notes` / `create_note` / `update_note` / `delete_note`。
+
+## 应用配置
+
+应用配置集中在 `src-tauri/src/config.rs`，例如数据库名、连接池大小、默认托盘行为。`lib.rs` 启动时通过 `AppConfig::load()` 读取，业务模块不直接散落读取配置。
 
 ## 日志
 
-使用 `tauri-plugin-log`，输出到 stdout 与日志文件（`LogDir/tauri-zero.log`）。
+使用 `tauri-plugin-log`，输出到 stdout 与日志文件：
 
 ```rust
 log::info!("something happened");
-log::error!("failed: {}", e);
+log::error!("failed: {e}");
 ```
-
-前端可通过 `@tauri-apps/plugin-log` 读取日志（如需要可自行封装命令）。

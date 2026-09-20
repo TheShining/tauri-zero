@@ -4,7 +4,7 @@ tauri-zero 已集成常用 Tauri 官方插件，前端封装在 `src/utils/`。
 
 ## 文件系统
 
-文件读写通过 Rust 命令实现（`src-tauri/src/commands/fs.rs`），前端封装在 `src/utils/fs.ts`：
+文件读写通过 Rust 命令实现（`src-tauri/src/platform/fs.rs`），前端封装在 `src/utils/fs.ts`：
 
 ```ts
 import { readTextFile, writeTextFile, fileExists } from "../utils/fs";

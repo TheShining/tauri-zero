@@ -26,7 +26,7 @@ Routing, state, requests, i18n, logging, error handling, CSP security, CI/CD, au
 
 **前端 / Frontend** — react-router v8 · zustand v5 · plugin-http 请求层 · Ant Design v6 · i18next 中英双语 · ErrorBoundary
 
-**Rust 端 / Backend** — tauri-plugin-log · thiserror 统一错误 · tokio 全局状态 · 命令模块化 · CSP 安全加固
+**Rust 端 / Backend** — domain/platform 模块化架构 · sqlx migrations · thiserror 统一错误 · 状态拆分 · tauri-plugin-log · CSP 安全加固
 
 **工程化 / Engineering** — ESLint 10 + Prettier 3 + Stylelint 17 · commitlint + git hooks · 多环境变量 · React Compiler
 
@@ -56,7 +56,8 @@ See [guide/](guide/README.md) for full docs: routing, state, requests, i18n, Rus
 ```
 tauri-zero/
 ├── src/                 # 前端源码（api / components / pages / router / stores / locales）
-├── src-tauri/           # Rust 端（commands / capabilities / tauri.conf.json）
+├── src-tauri/           # Rust 端（domain / platform / state / migrations / capabilities）
+├── guide/               # 使用指南 / user guides
 ├── .github/workflows/   # CI / release 工作流
 ├── CONTRIBUTING.md
 └── LICENSE

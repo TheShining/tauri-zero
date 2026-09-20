@@ -1,9 +1,16 @@
+use crate::error::AppResult;
+use crate::state::SharedConfigState;
+use serde::Deserialize;
 use tauri::{
     tray::{MouseButton, TrayIcon, TrayIconBuilder, TrayIconEvent},
-    AppHandle, Manager, PhysicalPosition, Wry,
+    AppHandle, Emitter, Manager, PhysicalPosition, Wry,
 };
 
 pub const TRAY_ID: &str = "main-tray";
+
+// ---------------------------------------------------------------------------
+// 托盘图标创建与事件处理
+// ---------------------------------------------------------------------------
 
 pub fn create_tray(app: &AppHandle<Wry>) -> tauri::Result<()> {
     let icon = app
@@ -84,4 +91,68 @@ fn compute_popup_position(
     }
 
     PhysicalPosition::new(x, y)
+}
+
+// ---------------------------------------------------------------------------
+// 托盘相关 IPC 命令
+// ---------------------------------------------------------------------------
+
+#[tauri::command]
+pub fn set_close_to_tray(value: bool, state: tauri::State<'_, SharedConfigState>) -> AppResult<()> {
+    *state.close_to_tray.write().unwrap() = value;
+    Ok(())
+}
+
+/// Actions invoked from the tray popup menu.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum TrayAction {
+    Show,
+    Hide,
+    Settings,
+    CheckUpdate,
+    Quit,
+}
+
+/// Handle a tray menu action from the frontend popup.
+///
+/// All window management is done on the backend to avoid
+/// frontend IPC permission issues.
+#[tauri::command]
+pub fn tray_action(action: TrayAction, app: AppHandle<Wry>) {
+    // Hide the popup first — every action closes it.
+    if let Some(popup) = app.get_webview_window("tray-popup") {
+        let _ = popup.hide();
+    }
+
+    match action {
+        TrayAction::Show => {
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.show();
+                let _ = window.set_focus();
+            }
+        }
+        TrayAction::Hide => {
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.hide();
+            }
+        }
+        TrayAction::Settings => {
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.show();
+                let _ = window.set_focus();
+                let _ = app.emit_to("main", "tray://navigate", "/settings");
+            }
+        }
+        TrayAction::CheckUpdate => {
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.show();
+                let _ = window.set_focus();
+            }
+            let _ = app.emit_to("main", "tray://check-update", ());
+        }
+        TrayAction::Quit => {
+            app.exit(0);
+        }
+    }
 }

@@ -64,7 +64,7 @@ tauri-zero 采用**自定义 HTML 弹窗**而非系统原生菜单，好处是�
 
 ### 1. Rust 端：新增动作
 
-`src-tauri/src/commands/tray.rs`：
+`src-tauri/src/platform/tray.rs`：
 
 ```rust
 #[derive(Debug, Clone, Deserialize)]
@@ -138,8 +138,8 @@ tray: {
 
 | 文件 | 说明 |
 |------|------|
-| `src-tauri/src/tray.rs` | 托盘图标创建 + 点击事件 |
-| `src-tauri/src/commands/tray.rs` | 托盘动作命令 |
+| `src-tauri/src/platform/tray.rs` | 托盘图标创建 + 点击事件 |
+| `src-tauri/src/platform/tray.rs` | 托盘动作命令 |
 | `src/components/TrayMenu.tsx` | 托盘菜单组件 |
 | `src/components/TrayMenu.css` | 菜单样式 |
 | `src/pages/TrayPopup.tsx` | 弹窗页面（同步、尺寸适配） |
