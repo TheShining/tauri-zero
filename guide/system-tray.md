@@ -54,7 +54,7 @@ tauri-zero 采用**自定义 HTML 弹窗**而非系统原生菜单，好处是�
 右键托盘图标
   → Rust 计算弹出位置 → 显示 tray-popup 窗口
   → 前端渲染 TrayMenu 组件
-  → 点击菜单项 → invoke("tray_action") → Rust 执行对应操作
+  → 点击菜单项 → trayAction("...") → ipcInvoke("tray_action") → Rust 执行对应操作
   → 失焦自动关闭弹窗
 ```
 
@@ -97,7 +97,9 @@ pub fn tray_action(action: TrayAction, app: AppHandle<Wry>) {
 `src/components/TrayMenu.tsx`：
 
 ```tsx
-export type TrayActionType = "show" | "hide" | "settings" | "check_update" | "quit" | "my_new_action";
+import { trayAction, type TrayAction } from "../api/ipc/modules/tray";
+
+// 在 TrayAction 中追加 "my_new_action"，并在 JSX 中调用 trayAction("my_new_action")
 
 // 在 JSX 中添加：
 <div className="tray-menu-item" onClick={() => void handleAction("my_new_action")}>
@@ -140,6 +142,7 @@ tray: {
 |------|------|
 | `src-tauri/src/platform/tray.rs` | 托盘图标创建 + 点击事件 |
 | `src-tauri/src/platform/tray.rs` | 托盘动作命令 |
+| `src/api/ipc/modules/tray.ts` | 托盘 IPC API 与动作类型
 | `src/components/TrayMenu.tsx` | 托盘菜单组件 |
 | `src/components/TrayMenu.css` | 菜单样式 |
 | `src/pages/TrayPopup.tsx` | 弹窗页面（同步、尺寸适配） |

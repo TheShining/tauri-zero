@@ -6,7 +6,7 @@ import type {
   RequestInterceptor,
   ResponseInterceptor,
 } from "./types";
-import { useUserStore } from "../stores/useUserStore";
+import { useUserStore } from "../../stores/useUserStore";
 
 const requestInterceptors: RequestInterceptor[] = [];
 const responseInterceptors: ResponseInterceptor[] = [];

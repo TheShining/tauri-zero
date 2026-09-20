@@ -82,6 +82,8 @@ model.rs    领域模型 / DTO
 
 ## 统一错误处理
 
+前端 IPC API 层会把这些错误统一包装为 `AppIpcError`，完整调用链路见 [前后端通信](./communication.md)。
+
 错误类型定义在 `src-tauri/src/error.rs`，使用 `thiserror` 派生，并实现 `Serialize`：
 
 ```rust
