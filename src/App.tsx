@@ -2,7 +2,7 @@ import { ConfigProvider, theme as antdTheme } from "antd";
 import zhCN from "antd/locale/zh_CN";
 import enUS from "antd/locale/en_US";
 import { useEffect } from "react";
-import { invoke } from "@tauri-apps/api/core";
+import { setCloseToTray } from "./api/ipc/modules/app";
 import { emit } from "@tauri-apps/api/event";
 import i18n from "./i18n";
 import AppRouter from "./router";
@@ -16,7 +16,9 @@ export default function App() {
 
   // Sync persisted close-to-tray setting to backend on startup
   useEffect(() => {
-    void invoke("set_close_to_tray", { value: useAppStore.getState().closeToTray });
+    void setCloseToTray(useAppStore.getState().closeToTray).catch((error) => {
+      console.error("[App] sync close-to-tray failed:", error);
+    });
   }, []);
 
   // Keep the i18n instance in sync with the zustand locale.

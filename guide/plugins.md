@@ -1,13 +1,13 @@
 # 系统能力
 
-tauri-zero 已集成常用 Tauri 官方插件，前端封装在 `src/utils/`。
+tauri-zero 已集成常用 Tauri 官方插件。IPC 相关能力封装在 `src/api/ipc/modules/`，插件工具函数保留在 `src/utils/`。
 
 ## 文件系统
 
-文件读写通过 Rust 命令实现（`src-tauri/src/platform/fs.rs`），前端封装在 `src/utils/fs.ts`：
+文件读写通过 Rust 命令实现（`src-tauri/src/platform/fs.rs`），前端封装在 `src/api/ipc/modules/fs.ts`：
 
 ```ts
-import { readTextFile, writeTextFile, fileExists } from "../utils/fs";
+import { readTextFile, writeTextFile, fileExists } from "../api/ipc/modules/fs";
 
 const content = await readTextFile("/absolute/path/file.txt");
 await writeTextFile("/absolute/path/file.txt", "hello");

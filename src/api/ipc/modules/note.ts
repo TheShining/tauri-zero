@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api/core";
+import { ipcInvoke } from "../client";
 
 export interface Note {
   id: number;
@@ -9,17 +9,17 @@ export interface Note {
 }
 
 export function listNotes() {
-  return invoke<Note[]>("list_notes");
+  return ipcInvoke<Note[]>("list_notes");
 }
 
 export function createNote(title: string, content: string) {
-  return invoke<Note>("create_note", { title, content });
+  return ipcInvoke<Note>("create_note", { title, content });
 }
 
 export function updateNote(id: number, title: string, content: string) {
-  return invoke<Note>("update_note", { id, title, content });
+  return ipcInvoke<Note>("update_note", { id, title, content });
 }
 
 export function deleteNote(id: number) {
-  return invoke<void>("delete_note", { id });
+  return ipcInvoke<void>("delete_note", { id });
 }
