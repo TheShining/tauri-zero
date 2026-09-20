@@ -119,18 +119,18 @@ GitHub 的 `GITHUB_TOKEN` 触发的事件不会再次触发新的 workflow（防
 
 ### 本地打包
 
-本地执行 `pnpm tauri build` 同样需要私钥，否则会报 `A public key has been found, but no private key`。
+本地执行 `pnpm tauri:build` 同样需要私钥，否则会报 `A public key has been found, but no private key`。
 
 ```powershell
 # PowerShell
 $env:TAURI_SIGNING_PRIVATE_KEY = (Get-Content src-tauri/updater.key -Raw).Trim()
-pnpm tauri build
+pnpm tauri:build
 ```
 
 ```bash
 # bash / zsh
 export TAURI_SIGNING_PRIVATE_KEY="$(cat src-tauri/updater.key)"
-pnpm tauri build
+pnpm tauri:build
 ```
 
 ## 自动更新流程

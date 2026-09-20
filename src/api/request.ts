@@ -45,7 +45,7 @@ export class ApiError extends Error {
 
 export async function request<T = unknown>(url: string, config: RequestConfig = {}): Promise<T> {
   let finalConfig: RequestConfig = {
-    baseURL: import.meta.env.VITE_API_BASE_URL,
+    baseURL: import.meta.env.APP_PUBLIC_API_BASE_URL,
     ...config,
   };
   for (const interceptor of requestInterceptors) {

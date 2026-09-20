@@ -11,7 +11,7 @@ tauri-zero is a zero-config Tauri 2 + React 19 desktop app starter. These guides
 - [Rust 端开发](./rust.md) — domain/platform 结构、命令注册、错误处理、状态、SQLite 迁移
 - [系统能力](./plugins.md) — 文件系统、对话框、通知、剪贴板、Shell、自动更新
 - [系统托盘](./system-tray.md) — 托盘菜单、关闭最小化、主题/语言同步
-- [环境变量](./env.md) — 多环境配置与类型化 `import.meta.env`
+- [环境变量](./env.md) — 前后端共享多环境配置与类型化 `import.meta.env`
 - [测试](./testing.md) — 前端 Vitest 与 Rust 测试
 - [CI/CD 与发布](./ci-cd.md) — 质量门禁、自动发版、自动更新分发
 
@@ -34,9 +34,8 @@ src-tauri/              # Rust 端
   src/commands/         # 命令注册入口 + demo 命令
   src/domain/           # 业务领域（model/repo/service/command）
   src/platform/         # 平台能力（fs/tray 等）
-  src/state/            # 按职责拆分的全局状态
-  src/config.rs         # 应用配置
-  src/db.rs             # SQLite 连接池 + migrations
+  src/state/            # 按职责拆分的全局状态 + 默认托盘行为配置
+  src/db.rs             # SQLite 连接池 + migrations + 数据库配置
   src/error.rs          # 统一错误类型
   capabilities/         # 权限声明
 ```

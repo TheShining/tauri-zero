@@ -4,9 +4,9 @@
   "version": "0.3.0",
   "identifier": "com.liang.tauri-zero",
   "build": {
-    "beforeDevCommand": "pnpm dev",
+    "beforeDevCommand": "pnpm dev:env",
     "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "pnpm build",
+    "beforeBuildCommand": "pnpm build:env",
     "frontendDist": "../dist"
   },
   "app": {

@@ -44,6 +44,17 @@ export default tseslint.config(
     ...tseslint.configs.disableTypeChecked,
   },
 
+  // Node.js 脚本
+  {
+    files: ["scripts/**/*.mjs"],
+    languageOptions: {
+      globals: {
+        console: "readonly",
+        process: "readonly",
+      },
+    },
+  },
+
   // 关闭与 Prettier 冲突的格式化规则
   prettier,
 );

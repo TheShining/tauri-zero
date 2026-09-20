@@ -5142,6 +5142,7 @@ dependencies = [
 name = "tauri-zero"
 version = "0.3.0"
 dependencies = [
+ "dotenvy",
  "log",
  "serde",
  "serde_json",

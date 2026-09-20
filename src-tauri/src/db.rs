@@ -3,6 +3,19 @@ use sqlx::SqlitePool;
 use std::path::Path;
 use std::str::FromStr;
 
+/// Database filename injected by `build.rs` at compile time.
+pub fn db_filename() -> &'static str {
+    option_env!("APP_SERVER_DB_FILENAME").unwrap_or("tauri-zero.db")
+}
+
+/// Maximum SQLite pool size injected by `build.rs` at compile time.
+pub fn db_max_connections() -> u32 {
+    option_env!("APP_SERVER_DB_POOL_SIZE")
+        .unwrap_or("5")
+        .parse()
+        .expect("APP_SERVER_DB_POOL_SIZE must be a positive integer")
+}
+
 pub async fn init_pool(db_path: &Path, max_connections: u32) -> Result<SqlitePool, sqlx::Error> {
     let options = SqliteConnectOptions::from_str(db_path.to_str().unwrap_or_default())?
         .create_if_missing(true);
@@ -18,4 +31,20 @@ pub async fn init_pool(db_path: &Path, max_connections: u32) -> Result<SqlitePoo
         .map_err(|e| sqlx::Error::Migrate(Box::new(e)))?;
 
     Ok(pool)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{db_filename, db_max_connections};
+
+    #[test]
+    fn loads_test_database_configuration() {
+        // `pnpm rust:test` injects APP_ENV=test before invoking Cargo.
+        if option_env!("APP_ENV") != Some("test") {
+            return;
+        }
+
+        assert_eq!(db_filename(), "tauri-zero-test.db");
+        assert_eq!(db_max_connections(), 2);
+    }
 }

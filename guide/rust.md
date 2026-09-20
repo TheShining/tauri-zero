@@ -20,8 +20,7 @@ src-tauri/src/
 │   ├── fs.rs
 │   └── tray.rs
 ├── state/             # 拆分后的全局状态
-├── config.rs          # 应用配置
-├── db.rs              # SQLite 连接池 + migrations
+├── db.rs              # SQLite 连接池 + migrations + 数据库配置
 └── error.rs           # AppError / AppResult
 ```
 
@@ -121,6 +120,14 @@ pub struct ConfigState {
     pub close_to_tray: RwLock<bool>,
 }
 
+impl ConfigState {
+    pub fn new() -> Self {
+        Self {
+            close_to_tray: RwLock::new(default_close_to_tray()),
+        }
+    }
+}
+
 pub struct CounterState {
     pub counter: AsyncRwLock<i64>,
 }
@@ -156,7 +163,12 @@ pub async fn list_notes(state: tauri::State<'_, SharedDbState>) -> AppResult<Vec
 
 ## 应用配置
 
-应用配置集中在 `src-tauri/src/config.rs`，例如数据库名、连接池大小、默认托盘行为。`lib.rs` 启动时通过 `AppConfig::load()` 读取，业务模块不直接散落读取配置。
+项目不设置单独的 `src-tauri/src/config.rs`。构建期环境变量在真实使用点就近读取：
+
+- 数据库名和连接池大小：`src-tauri/src/db.rs`；
+- 默认关闭到托盘行为：`src-tauri/src/state/mod.rs`。
+
+后续新增 Rust-only 配置时，优先放入对应业务域或平台模块，而不是恢复一个只有字段转发价值的全局配置对象。若未来出现真正跨多个模块共享、需要校验和组合的复杂配置，再考虑独立配置模块。
 
 ## 日志
 

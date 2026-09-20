@@ -20,6 +20,7 @@ function reactDevtools() {
 
 // https://vite.dev/config/
 export default defineConfig(async () => ({
+  envPrefix: ["APP_PUBLIC_"],
   plugins: [
     reactDevtools(),
     react({

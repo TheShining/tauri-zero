@@ -86,7 +86,7 @@ const data = await request<UserInfo>("/user/info", { method: "GET" });
 
 `request<T>()` 默认行为：
 
-- 自动拼接 `VITE_API_BASE_URL`
+- 自动拼接 `APP_PUBLIC_API_BASE_URL`
 - 自动注入 `Authorization: Bearer <token>`（可通过 `skipAuth: true` 关闭）
 - 响应约定 `{ code, message, data }`，`code !== 0` 时抛出 `ApiError`
 - 支持 `timeout`、`params`、`body` 等配置

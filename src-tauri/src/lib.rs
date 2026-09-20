@@ -1,5 +1,4 @@
 mod commands;
-mod config;
 mod db;
 mod domain;
 mod error;
@@ -7,7 +6,6 @@ mod platform;
 mod state;
 mod utils;
 
-use config::AppConfig;
 use state::{ConfigState, CounterState, DbState};
 use std::sync::Arc;
 use tauri::Manager;
@@ -39,20 +37,20 @@ pub fn run() {
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
         .setup(|app| {
-            // 1. 加载配置
-            let config = AppConfig::load();
-            // 2. 初始化数据库
+            // 1. 初始化数据库
             let app_data_dir = app.path().app_data_dir()?;
             std::fs::create_dir_all(&app_data_dir)?;
-            let db_path = app_data_dir.join(&config.db_filename);
-            let pool =
-                tauri::async_runtime::block_on(db::init_pool(&db_path, config.db_max_connections))
-                    .map_err(|e| std::io::Error::other(e.to_string()))?;
-            // 3. 注册 State
+            let db_path = app_data_dir.join(db::db_filename());
+            let pool = tauri::async_runtime::block_on(db::init_pool(
+                &db_path,
+                db::db_max_connections(),
+            ))
+            .map_err(|e| std::io::Error::other(e.to_string()))?;
+            // 2. 注册 State
             app.manage(Arc::new(DbState::new(pool)));
-            app.manage(Arc::new(ConfigState::new(config.default_close_to_tray)));
+            app.manage(Arc::new(ConfigState::new()));
             app.manage(Arc::new(CounterState::new()));
-            // 4. 平台模块初始化
+            // 3. 平台模块初始化
             platform::tray::create_tray(app.handle())
                 .map_err(|e| std::io::Error::other(e.to_string()))?;
             Ok(())
