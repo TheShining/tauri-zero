@@ -1,4 +1,4 @@
-import { ipcInvoke } from "../ipc";
+import { ipcInvoke } from "../client";
 
 export type TrayAction = "show" | "hide" | "settings" | "check_update" | "quit";
 

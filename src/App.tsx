@@ -2,7 +2,7 @@ import { ConfigProvider, theme as antdTheme } from "antd";
 import zhCN from "antd/locale/zh_CN";
 import enUS from "antd/locale/en_US";
 import { useEffect } from "react";
-import { setCloseToTray } from "./api/modules/app";
+import { setCloseToTray } from "./api/ipc/modules/app";
 import { emit } from "@tauri-apps/api/event";
 import i18n from "./i18n";
 import AppRouter from "./router";

@@ -5,7 +5,13 @@ vi.mock("@tauri-apps/api/core", () => ({
 }));
 
 import { invoke } from "@tauri-apps/api/core";
-import { AppIpcError, isAppIpcError, isAppIpcErrorPayload, ipcInvoke, toAppIpcError } from "./ipc";
+import {
+  AppIpcError,
+  isAppIpcError,
+  isAppIpcErrorPayload,
+  ipcInvoke,
+  toAppIpcError,
+} from "./client";
 
 const invokeMock = vi.mocked(invoke);
 

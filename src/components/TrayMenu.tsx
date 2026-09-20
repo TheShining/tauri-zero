@@ -1,6 +1,6 @@
 import { theme } from "antd";
 import { useTranslation } from "react-i18next";
-import { trayAction, type TrayAction } from "../api/modules/tray";
+import { trayAction, type TrayAction } from "../api/ipc/modules/tray";
 import type { CSSProperties } from "react";
 import "./TrayMenu.css";
 

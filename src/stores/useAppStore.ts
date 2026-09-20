@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { setCloseToTray } from "../api/modules/app";
+import { setCloseToTray } from "../api/ipc/modules/app";
 
 export type ThemeMode = "light" | "dark";
 export type Locale = "zh-CN" | "en-US";

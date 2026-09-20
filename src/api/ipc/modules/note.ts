@@ -1,4 +1,4 @@
-import { ipcInvoke } from "../ipc";
+import { ipcInvoke } from "../client";
 
 export interface Note {
   id: number;

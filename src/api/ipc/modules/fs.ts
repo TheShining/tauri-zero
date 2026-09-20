@@ -1,4 +1,4 @@
-import { ipcInvoke } from "../ipc";
+import { ipcInvoke } from "../client";
 
 export function readTextFile(path: string) {
   return ipcInvoke<string>("read_text_file", { path });

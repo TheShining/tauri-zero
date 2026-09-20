@@ -4,17 +4,31 @@ tauri-zero 的 React 与 Rust 通信分两类，开发时不要混淆：
 
 | 类型 | 用途 | 前端入口 |
 |------|------|----------|
-| **Tauri IPC Command** | 调用本机 Rust 命令、访问数据库/文件/托盘等系统能力 | `src/api/ipc.ts` + `src/api/modules/` |
-| **外部 HTTP** | 访问远程服务、网关或第三方 API | `src/api/request.ts` + `tauri-plugin-http` |
+| **Tauri IPC Command** | 调用本机 Rust 命令、访问数据库/文件/托盘等系统能力 | `src/api/ipc/client.ts` + `src/api/ipc/modules/` |
+| **外部 HTTP** | 访问远程服务、网关或第三方 API | `src/api/http/request.ts` + `tauri-plugin-http` |
 
 本文只描述 Tauri IPC Command 和 Tauri Event。外部 HTTP 请求见 `guide/frontend.md`。
+
+## 目录隔离
+
+```text
+src/api/http/   # 外部网络请求：request<T>() / tauriFetch / HTTP 拦截器
+src/api/ipc/    # 本地 Tauri IPC：ipcInvoke<T>() / Rust command 模块
+```
+
+两条通道必须保持隔离：
+
+- `http/modules/*.ts` 只能依赖 `../request`；
+- `ipc/modules/*.ts` 只能依赖 `../client`；
+- HTTP API 不调用 Rust command，IPC API 不发起外部网络请求；
+- HTTP 错误使用 `ApiError`，IPC 错误使用 `AppIpcError`。
 
 ## 通信链路
 
 ```text
 React 组件 / Zustand store
-  → src/api/modules/<domain>.ts
-  → src/api/ipc.ts 的 ipcInvoke<T>()
+  → src/api/ipc/modules/<domain>.ts
+  → src/api/ipc/client.ts 的 ipcInvoke<T>()
   → @tauri-apps/api/core 的 invoke()
   → Rust #[tauri::command]
   → service / repo / platform
@@ -26,8 +40,8 @@ React 组件 / Zustand store
 ### 分层规则
 
 1. 组件和 store **不直接导入 `invoke`**，也不手写命令字符串。
-2. 所有 IPC 调用必须封装在 `src/api/modules/<domain>.ts`。
-3. API 模块必须使用 `src/api/ipc.ts` 的 `ipcInvoke<T>()`，由它统一处理错误。
+2. 所有 IPC 调用必须封装在 `src/api/ipc/modules/<domain>.ts`。
+3. API 模块必须使用 `src/api/ipc/client.ts` 的 `ipcInvoke<T>()`，由它统一处理错误。
 4. Rust 端 `command.rs` 只做参数提取和调用 service/platform，不承载业务逻辑。
 5. SQL 留在 `repo.rs`，业务规则留在 `service.rs`，窗口/托盘等平台逻辑留在 `platform/`。
 6. 外部 HTTP 使用 `request<T>()`，不要通过 Rust command 转发普通 HTTP。
@@ -37,14 +51,14 @@ React 组件 / Zustand store
 ### 统一 IPC 入口
 
 ```ts
-import { ipcInvoke } from "../api/ipc";
+import { ipcInvoke } from "../api/ipc/client";
 
 const content = await ipcInvoke<string>("read_text_file", {
   path: "/absolute/path/file.txt",
 });
 ```
 
-`src/api/ipc.ts` 是唯一允许直接导入 `@tauri-apps/api/core` 中 `invoke` 的运行时代码（测试可以 mock 该依赖）：
+`src/api/ipc/client.ts` 是唯一允许直接导入 `@tauri-apps/api/core` 中 `invoke` 的运行时代码（测试可以 mock 该依赖）：
 
 ```ts
 export async function ipcInvoke<T = unknown>(
@@ -61,31 +75,39 @@ export async function ipcInvoke<T = unknown>(
 
 ```text
 src/api/
-├── ipc.ts             # IPC wrapper + AppIpcError
-└── modules/
-    ├── app.ts         # setCloseToTray
-    ├── fs.ts          # readTextFile / writeTextFile / fileExists
-    ├── note.ts        # Note CRUD
-    └── tray.ts        # TrayAction / trayAction
+├── http/              # 外部网络请求，只走 tauri-plugin-http
+│   ├── client.ts       # fetch 封装
+│   ├── request.ts      # request<T>() + 拦截器 + ApiError
+│   ├── types.ts        # HTTP 配置与响应类型
+│   └── modules/
+│       └── user.ts     # 远程用户接口
+└── ipc/               # 本地 Tauri IPC，只走 Rust command
+    ├── client.ts       # ipcInvoke<T>() + AppIpcError
+    ├── client.test.ts  # IPC wrapper 测试
+    └── modules/
+        ├── app.ts      # setCloseToTray
+        ├── fs.ts       # readTextFile / writeTextFile / fileExists
+        ├── note.ts     # Note CRUD
+        └── tray.ts     # TrayAction / trayAction
 ```
 
 组件中的用法：
 
 ```tsx
-import { listNotes, createNote } from "../api/modules/note";
+import { listNotes, createNote } from "../api/ipc/modules/note";
 
 const notes = await listNotes();
 const note = await createNote("标题", "内容");
 ```
 
 ```tsx
-import { setCloseToTray } from "../api/modules/app";
+import { setCloseToTray } from "../api/ipc/modules/app";
 
 await setCloseToTray(true);
 ```
 
 ```tsx
-import { trayAction, type TrayAction } from "../api/modules/tray";
+import { trayAction, type TrayAction } from "../api/ipc/modules/tray";
 
 await trayAction("settings");
 ```
@@ -113,10 +135,10 @@ Rust 端命令统一返回 `AppResult<T>`。失败时 `src-tauri/src/error.rs` �
 | `config` | `CONFIG` | 配置错误 |
 | `unauthorized` | `UNAUTHORIZED` | 未授权 |
 
-前端在 `src/api/ipc.ts` 中定义了对应类型：
+前端在 `src/api/ipc/client.ts` 中定义了对应类型：
 
 ```ts
-import type { AppIpcErrorKind } from "../api/ipc";
+import type { AppIpcErrorKind } from "../api/ipc/client";
 
 export interface AppIpcErrorFields {
   readonly kind: AppIpcErrorKind;
@@ -134,7 +156,7 @@ export interface AppIpcErrorFields {
 处理错误时：
 
 ```tsx
-import { isAppIpcError } from "../api/ipc";
+import { isAppIpcError } from "../api/ipc/client";
 
 try {
   await createNote("", "content");
@@ -207,7 +229,7 @@ return () => {
 };
 ```
 
-事件监听不在 `ipcInvoke()` 管辖范围内；如后续事件数量增加，可以在 `src/api/events.ts` 中继续封装事件名和 payload 类型。
+事件监听不在 `ipcInvoke()` 管辖范围内；如后续事件数量增加，可以在 `src/api/ipc/events.ts` 中继续封装事件名和 payload 类型。
 
 ## 新增 IPC Command
 
@@ -234,10 +256,10 @@ domain::settings::command::list_settings,
 
 ### 3. 前端 API 模块
 
-创建或更新 `src/api/modules/settings.ts`：
+创建或更新 `src/api/ipc/modules/settings.ts`：
 
 ```ts
-import { ipcInvoke } from "../ipc";
+import { ipcInvoke } from "../client";
 
 export interface Setting {
   id: number;
@@ -253,7 +275,7 @@ export function listSettings() {
 ### 4. 组件调用
 
 ```tsx
-import { listSettings } from "../api/modules/settings";
+import { listSettings } from "../api/ipc/modules/settings";
 
 const settings = await listSettings();
 ```
@@ -261,7 +283,7 @@ const settings = await listSettings();
 ## 约定清单
 
 - 组件、store、hooks 不导入 `invoke`。
-- `src/api/ipc.ts` 是唯一 IPC 调用出口；单元测试可以 mock `@tauri-apps/api/core`。
+- `src/api/ipc/client.ts` 是唯一 IPC 调用出口；单元测试可以 mock `@tauri-apps/api/core`。
 - 命令名、参数名和 DTO 字段必须与 Rust `#[tauri::command]` 及 serde 约定一致。
 - Rust 命令返回 `AppResult<T>`，不要返回裸错误或 `Option` 语义模糊的值。
 - 新命令必须注册到 `all_handlers!`。
