@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.0](https://github.com/TheShining/tauri-zero/compare/v0.3.0...v0.4.0) (2026-09-20)
+
+
+### Features
+
+* **build:** 环境标识 bundle 文件名 / environment-aware bundle filenames ([6903555](https://github.com/TheShining/tauri-zero/commit/6903555665fd6f66f7d9c4f6a8cecb5c34e39210))
+* **env:** 支持多环境配置 / support multi-environment configuration ([8e5da3b](https://github.com/TheShining/tauri-zero/commit/8e5da3b8658ae4f6ca80bb14c9236a834734f707))
+
 ## [0.3.0](https://github.com/TheShining/tauri-zero/compare/v0.2.0...v0.3.0) (2026-09-13)
 
 
