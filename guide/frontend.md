@@ -118,7 +118,7 @@ addErrorInterceptor((error) => {
 
 ### 调用 Rust 命令
 
-Rust 命令通过 `invoke` 调用，接口定义在 `src/api/modules/`：
+Rust IPC 命令统一通过 `src/api/ipc.ts` 的 `ipcInvoke<T>()` 调用，接口定义在 `src/api/modules/`。组件和 store 不要直接导入 `invoke`：
 
 ```ts
 import { listNotes, createNote } from "../api/modules/note";
@@ -126,6 +126,22 @@ import { listNotes, createNote } from "../api/modules/note";
 const notes = await listNotes();
 const note = await createNote("标题", "内容");
 ```
+
+命令失败时会统一抛出 `AppIpcError`，保留 Rust `AppError` 的 `kind`、`code`、`message`：
+
+```ts
+import { isAppIpcError } from "../api/ipc";
+
+try {
+  await createNote("", "内容");
+} catch (error) {
+  if (isAppIpcError(error)) {
+    console.error(error.kind, error.code, error.message);
+  }
+}
+```
+
+详细分层、错误契约和事件用法见 [前后端通信](./communication.md)。
 
 ## 国际化
 

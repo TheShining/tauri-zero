@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { invoke } from "@tauri-apps/api/core";
+import { setCloseToTray } from "../api/modules/app";
 
 export type ThemeMode = "light" | "dark";
 export type Locale = "zh-CN" | "en-US";
@@ -28,7 +28,9 @@ export const useAppStore = create<AppState>()(
       setPrimaryColor: (primaryColor) => set({ primaryColor }),
       setCloseToTray: (closeToTray) => {
         set({ closeToTray });
-        void invoke("set_close_to_tray", { value: closeToTray });
+        void setCloseToTray(closeToTray).catch((error) => {
+          console.error("[useAppStore] set close-to-tray failed:", error);
+        });
       },
     }),
     { name: "app-store" },
