@@ -1,4 +1,7 @@
 use crate::error::AppResult;
+use crate::platform::window::{
+    OpenWindowRequest, SharedWindowManager, WindowKind, MAIN_WINDOW_LABEL,
+};
 use crate::state::SharedConfigState;
 use serde::Deserialize;
 use tauri::{
@@ -30,19 +33,15 @@ pub fn create_tray(app: &AppHandle<Wry>) -> tauri::Result<()> {
 
 fn handle_tray_event(tray: &TrayIcon<Wry>, event: TrayIconEvent) {
     let app = tray.app_handle();
+    let window_manager = app.state::<SharedWindowManager>();
+
     match event {
         TrayIconEvent::Click {
             button: MouseButton::Left,
             ..
         } => {
-            // Left click: toggle main window visibility
-            if let Some(window) = app.get_webview_window("main") {
-                if window.is_visible().unwrap_or(false) {
-                    let _ = window.hide();
-                } else {
-                    let _ = window.show();
-                    let _ = window.set_focus();
-                }
+            if let Err(error) = window_manager.toggle_main(app) {
+                log::error!("[tray] failed to toggle main window: {error}");
             }
         }
         TrayIconEvent::Click {
@@ -50,12 +49,9 @@ fn handle_tray_event(tray: &TrayIcon<Wry>, event: TrayIconEvent) {
             position,
             ..
         } => {
-            // Right click: show custom popup window at cursor position
-            if let Some(popup) = app.get_webview_window("tray-popup") {
-                let pos = compute_popup_position(app, position, &popup);
-                let _ = popup.set_position(pos);
-                let _ = popup.show();
-                let _ = popup.set_focus();
+            let position = compute_popup_position(app, position);
+            if let Err(error) = window_manager.show_tray_popup_at(app, position) {
+                log::error!("[tray] failed to show tray popup: {error}");
             }
         }
         _ => {}
@@ -66,8 +62,11 @@ fn handle_tray_event(tray: &TrayIcon<Wry>, event: TrayIconEvent) {
 fn compute_popup_position(
     app: &AppHandle<Wry>,
     cursor: PhysicalPosition<f64>,
-    popup: &tauri::WebviewWindow<Wry>,
 ) -> PhysicalPosition<i32> {
+    let Some(popup) = app.get_webview_window("tray-popup") else {
+        return PhysicalPosition::new(cursor.x as i32, cursor.y as i32);
+    };
+
     let popup_size = popup
         .outer_size()
         .unwrap_or(tauri::PhysicalSize::new(200, 200));
@@ -80,11 +79,9 @@ fn compute_popup_position(
         let screen_right = screen_pos.x + screen.width as i32;
         let screen_bottom = screen_pos.y + screen.height as i32;
 
-        // Don't go off the right edge
         if x + popup_size.width as i32 > screen_right {
             x = screen_right - popup_size.width as i32;
         }
-        // If popup would go below the screen, show it above the cursor
         if y + popup_size.height as i32 > screen_bottom {
             y = cursor.y as i32 - popup_size.height as i32;
         }
@@ -114,45 +111,37 @@ pub enum TrayAction {
     Quit,
 }
 
-/// Handle a tray menu action from the frontend popup.
-///
-/// All window management is done on the backend to avoid
-/// frontend IPC permission issues.
 #[tauri::command]
-pub fn tray_action(action: TrayAction, app: AppHandle<Wry>) {
-    // Hide the popup first — every action closes it.
-    if let Some(popup) = app.get_webview_window("tray-popup") {
-        let _ = popup.hide();
+pub fn tray_action(
+    action: TrayAction,
+    app: AppHandle<Wry>,
+    state: tauri::State<'_, SharedWindowManager>,
+) -> AppResult<()> {
+    // Every menu action closes the popup first. A failure here must not
+    // block the action itself (especially Quit), so log instead of `?`.
+    if let Err(error) = state.hide_tray_popup(&app) {
+        log::warn!("[tray] failed to hide tray popup before action: {error}");
     }
 
     match action {
-        TrayAction::Show => {
-            if let Some(window) = app.get_webview_window("main") {
-                let _ = window.show();
-                let _ = window.set_focus();
-            }
-        }
-        TrayAction::Hide => {
-            if let Some(window) = app.get_webview_window("main") {
-                let _ = window.hide();
-            }
-        }
+        TrayAction::Show => state.focus(&app, MAIN_WINDOW_LABEL)?,
+        TrayAction::Hide => state.hide(&app, MAIN_WINDOW_LABEL)?,
         TrayAction::Settings => {
-            if let Some(window) = app.get_webview_window("main") {
-                let _ = window.show();
-                let _ = window.set_focus();
-                let _ = app.emit_to("main", "tray://navigate", "/settings");
-            }
+            state.open(
+                &app,
+                OpenWindowRequest {
+                    kind: WindowKind::Settings,
+                    context_id: None,
+                },
+            )?;
         }
         TrayAction::CheckUpdate => {
-            if let Some(window) = app.get_webview_window("main") {
-                let _ = window.show();
-                let _ = window.set_focus();
-            }
-            let _ = app.emit_to("main", "tray://check-update", ());
+            state.focus(&app, MAIN_WINDOW_LABEL)?;
+            app.emit_to(MAIN_WINDOW_LABEL, "tray://check-update", ())
+                .map_err(|error| crate::error::AppError::Internal(format!("{error}")))?;
         }
-        TrayAction::Quit => {
-            app.exit(0);
-        }
+        TrayAction::Quit => app.exit(0),
     }
+
+    Ok(())
 }

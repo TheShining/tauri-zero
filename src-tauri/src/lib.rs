@@ -6,6 +6,7 @@ mod platform;
 mod state;
 mod utils;
 
+use platform::window::SharedWindowManager;
 use state::{ConfigState, CounterState, DbState};
 use std::sync::Arc;
 use tauri::Manager;
@@ -20,7 +21,14 @@ pub fn run() {
                 .targets([
                     Target::new(TargetKind::Stdout),
                     Target::new(TargetKind::LogDir {
-                        file_name: Some("tauri-zero".into()),
+                        // Keep debug builds from competing with an installed
+                        // release instance for the same log file.
+                        file_name: Some(if cfg!(debug_assertions) {
+                            "tauri-zero-dev"
+                        } else {
+                            "tauri-zero"
+                        }
+                        .into()),
                     }),
                 ])
                 .level(log::LevelFilter::Info)
@@ -46,28 +54,27 @@ pub fn run() {
                 db::db_max_connections(),
             ))
             .map_err(|e| std::io::Error::other(e.to_string()))?;
-            // 2. 注册 State
+
+            // 2. 注册应用状态
+            let window_manager = Arc::new(platform::window::WindowManager::new());
+            app.manage(window_manager);
             app.manage(Arc::new(DbState::new(pool)));
             app.manage(Arc::new(ConfigState::new()));
             app.manage(Arc::new(CounterState::new()));
-            // 3. 平台模块初始化
+
+            // 3. 注册静态窗口并初始化平台模块
+            let window_manager = app.state::<SharedWindowManager>();
+            window_manager
+                .initialize_existing(app.handle())
+                .map_err(|e| std::io::Error::other(e.to_string()))?;
             platform::tray::create_tray(app.handle())
                 .map_err(|e| std::io::Error::other(e.to_string()))?;
             Ok(())
         })
-        .on_window_event(|window, event| match event {
-            tauri::WindowEvent::CloseRequested { api, .. } if window.label() == "main" => {
-                let state = window.app_handle().state::<Arc<ConfigState>>();
-                let close_to_tray = *state.close_to_tray.read().unwrap();
-                if close_to_tray {
-                    api.prevent_close();
-                    let _ = window.hide();
-                }
-            }
-            tauri::WindowEvent::Focused(false) if window.label() == "tray-popup" => {
-                let _ = window.hide();
-            }
-            _ => {}
+        .on_window_event(|window, event| {
+            let app = window.app_handle();
+            let window_manager = app.state::<SharedWindowManager>();
+            window_manager.handle_event(app, window, event);
         })
         .invoke_handler(crate::all_handlers!())
         .run(tauri::generate_context!())

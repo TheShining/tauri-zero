@@ -22,6 +22,14 @@ macro_rules! all_handlers {
             platform::fs::read_text_file,
             platform::fs::write_text_file,
             platform::fs::file_exists,
+            // --- platform::window ---
+            platform::window::window_open,
+            platform::window::window_list,
+            platform::window::window_focus,
+            platform::window::window_hide,
+            platform::window::window_close,
+            platform::window::window_force_close,
+            platform::window::window_set_dirty,
             // --- platform::tray ---
             platform::tray::set_close_to_tray,
             platform::tray::tray_action,

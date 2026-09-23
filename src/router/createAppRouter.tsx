@@ -6,6 +6,7 @@ const Home = lazy(() => import("../pages/Home"));
 const Settings = lazy(() => import("../pages/Settings"));
 const NotFound = lazy(() => import("../pages/NotFound"));
 const TrayPopup = lazy(() => import("../pages/TrayPopup"));
+const Document = lazy(() => import("../pages/Document"));
 
 export function createAppRouter() {
   return createHashRouter([
@@ -23,6 +24,12 @@ export function createAppRouter() {
       // rendered in its own frameless Tauri window.
       path: "/tray-popup",
       element: <TrayPopup />,
+    },
+    {
+      // Document windows are created by WindowManager and render as
+      // standalone top-level windows.
+      path: "/documents/:contextId",
+      element: <Document />,
     },
   ]);
 }

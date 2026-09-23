@@ -35,19 +35,14 @@ export default function BasicLayout() {
   // the component unmounts before listen() resolves: .then(fn => fn())
   // defers the unlisten call until the promise settles, no leaks.
   useEffect(() => {
-    const unlistenNav = listen<string>("tray://navigate", (event) => {
-      void navigate(event.payload);
-    });
-
     const unlistenUpdate = listen("tray://check-update", () => {
       void handleCheckUpdate();
     });
 
     return () => {
-      void unlistenNav.then((fn) => fn());
       void unlistenUpdate.then((fn) => fn());
     };
-  }, [navigate, handleCheckUpdate]);
+  }, [handleCheckUpdate]);
 
   return (
     <Layout style={{ minHeight: "100vh" }}>

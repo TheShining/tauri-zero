@@ -1,4 +1,4 @@
-import { ConfigProvider, theme as antdTheme } from "antd";
+import { App as AntdApp, ConfigProvider, theme as antdTheme } from "antd";
 import zhCN from "antd/locale/zh_CN";
 import enUS from "antd/locale/en_US";
 import { useEffect } from "react";
@@ -8,8 +8,11 @@ import i18n from "./i18n";
 import AppRouter from "./router";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { useAppStore } from "./stores/useAppStore";
+import { useWindowEvents } from "./hooks/useWindowEvents";
 
 export default function App() {
+  useWindowEvents();
+
   const theme = useAppStore((s) => s.theme);
   const locale = useAppStore((s) => s.locale);
   const primaryColor = useAppStore((s) => s.primaryColor);
@@ -43,9 +46,11 @@ export default function App() {
         token: { colorPrimary: primaryColor },
       }}
     >
-      <ErrorBoundary>
-        <AppRouter />
-      </ErrorBoundary>
+      <AntdApp>
+        <ErrorBoundary>
+          <AppRouter />
+        </ErrorBoundary>
+      </AntdApp>
     </ConfigProvider>
   );
 }

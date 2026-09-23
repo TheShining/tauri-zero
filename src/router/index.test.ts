@@ -16,4 +16,11 @@ describe("app router", () => {
 
     expect(routes.some((route) => route.path === "settings")).toBe(true);
   });
+
+  it("defines a standalone document window route", () => {
+    const router = createAppRouter();
+    const standalone = router.routes.filter((route) => route.path?.startsWith("/"));
+
+    expect(standalone.some((route) => route.path === "/documents/:contextId")).toBe(true);
+  });
 });
