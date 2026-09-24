@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
     sync::{Arc, Mutex, RwLock},
-    time::{SystemTime, UNIX_EPOCH},
+    time::{Duration, SystemTime, UNIX_EPOCH},
 };
 use tauri::{
     AppHandle, Emitter, Manager, PhysicalPosition, WebviewUrl, WebviewWindow, WebviewWindowBuilder,
@@ -19,6 +19,12 @@ pub const TRAY_POPUP_WINDOW_LABEL: &str = "tray-popup";
 const SETTINGS_LABEL: &str = "settings";
 const DOCUMENT_LABEL_PREFIX: &str = "document-";
 const CONTEXT_ID_MAX_LEN: usize = 128;
+/// 页面就绪上报的兜底超时：新窗口创建后先保持隐藏，等前端首帧就绪再显示；超时仍未就绪就无条件显示，
+/// 防止前端脚本崩溃等原因导致窗口永远不可见。
+/// Fallback timeout for the page-readiness report: a new window stays hidden until the frontend's first
+/// frame is ready; if no report arrives before the timeout, the window is shown unconditionally so a
+/// crashed page can never leave it invisible forever.
+const REVEAL_FALLBACK_TIMEOUT: Duration = Duration::from_secs(4);
 
 pub type SharedWindowManager = Arc<WindowManager>;
 
@@ -94,6 +100,10 @@ struct WindowInstance {
     visible: bool,
     focused: bool,
     dirty: bool,
+    /// 等待首帧绘制的待显示标记；托盘弹窗这类刻意隐藏的窗口保持 false，页面上报就绪时不会误显示它们。
+    /// Whether the window stays hidden until its first frame is painted; intentionally hidden windows
+    /// such as the tray popup keep this false so a readiness report never reveals them by accident.
+    pending_reveal: bool,
     created_at: u64,
     last_focused_at: u64,
 }
@@ -105,6 +115,7 @@ impl WindowInstance {
         context_id: Option<String>,
         visible: bool,
         focused: bool,
+        pending_reveal: bool,
     ) -> Self {
         let now = unix_timestamp();
         Self {
@@ -113,6 +124,7 @@ impl WindowInstance {
             context_id,
             visible,
             focused,
+            pending_reveal,
             dirty: false,
             created_at: now,
             last_focused_at: if focused { now } else { 0 },
@@ -153,7 +165,14 @@ impl WindowManager {
         for kind in [WindowKind::Main, WindowKind::TrayPopup] {
             let spec = window_spec(kind);
             if let Some(window) = app.get_webview_window(spec.label) {
-                self.register_existing_window(&window, spec, None)?;
+                // 主窗口在 tauri.conf.json 中声明为初始隐藏，需等前端就绪再显示；托盘弹窗刻意隐藏，不参与该机制。
+                // The main window is declared initially hidden in tauri.conf.json and waits for the frontend
+                // to be ready; the tray popup stays hidden on purpose and opts out of this mechanism.
+                let pending_reveal = matches!(kind, WindowKind::Main);
+                self.register_existing_window(&window, spec, None, pending_reveal)?;
+                if pending_reveal {
+                    self.schedule_reveal_fallback(app, spec.label);
+                }
             }
         }
 
@@ -185,7 +204,7 @@ impl WindowManager {
                     // Self-heal: the webview lives in Tauri but is missing from the registry (e.g. a lifecycle event race).
                     // Re-register instead of erroring out on focus.
                     if self.registered_kind(&label).is_err() {
-                        self.register_existing_window(&window, spec, context_id)?;
+                        self.register_existing_window(&window, spec, context_id, false)?;
                     }
                     false
                 }
@@ -198,6 +217,10 @@ impl WindowManager {
                         label.clone(),
                         WebviewUrl::App(format!("index.html#{route}").into()),
                     )
+                    // 隐藏创建：等前端首帧就绪（window_reveal）或兜底超时后再显示，避免页面加载期间白屏闪烁。
+                    // Created hidden: the window is revealed once the frontend's first frame is ready
+                    // (window_reveal) or after the fallback timeout, avoiding a white flash during load.
+                    .visible(false)
                     .title(creation.title)
                     .inner_size(creation.width, creation.height)
                     .resizable(creation.resizable)
@@ -220,13 +243,14 @@ impl WindowManager {
                     // Windows 11 DWM draws a default 1px gray border on frameless windows; remove it here.
                     dwm::polish_borderless_window(&window);
 
-                    self.register_existing_window(&window, spec, context_id)?;
+                    self.register_existing_window(&window, spec, context_id, true)?;
                     true
                 }
             }
         };
 
         if created {
+            self.schedule_reveal_fallback(app, &label);
             self.broadcast_lossy(app);
             return Ok(OpenWindowResult {
                 label,
@@ -475,6 +499,9 @@ impl WindowManager {
         window: &WebviewWindow<Wry>,
         spec: WindowSpec,
         context_id: Option<String>,
+        // 新窗口是否等待前端首帧就绪后再显示。
+        // Whether this window waits for the frontend's first frame before being revealed.
+        pending_reveal: bool,
     ) -> AppResult<()> {
         // 窗口创建过程中读取可见性或焦点可能短暂失败；错误的初始标志可通过事件自行修正，
         // 而中止注册会让注册表永久失配。
@@ -502,7 +529,14 @@ impl WindowManager {
             .map_err(|_| AppError::Internal("window registry lock poisoned".into()))?;
         windows.insert(
             label.clone(),
-            WindowInstance::new(label, spec.kind, context_id, visible, focused),
+            WindowInstance::new(
+                label,
+                spec.kind,
+                context_id,
+                visible,
+                focused,
+                pending_reveal,
+            ),
         );
         Ok(())
     }
@@ -536,6 +570,59 @@ impl WindowManager {
         self.mark_shown_and_focused(&label)?;
         self.broadcast_lossy(app);
         Ok(())
+    }
+
+    /// 页面就绪后显示隐藏中的窗口。仅在注册表仍标记 pending_reveal 且窗口不可见时执行；
+    /// 检查与清除标记在同一次写锁内完成，前端就绪上报与兜底超时并发触发时不会重复显示。
+    /// Reveal a hidden window once its page is ready. Runs only while the registry still flags it
+    /// pending_reveal and invisible; the check-and-clear happens in one write lock so a readiness
+    /// report racing the fallback timer can never reveal the window twice.
+    pub fn reveal_if_pending(&self, app: &AppHandle<Wry>, label: &str) -> AppResult<()> {
+        let should_reveal = {
+            let mut windows = self
+                .windows
+                .write()
+                .map_err(|_| AppError::Internal("window registry lock poisoned".into()))?;
+            match windows.get_mut(label) {
+                Some(instance) if instance.pending_reveal && !instance.visible => {
+                    instance.pending_reveal = false;
+                    true
+                }
+                _ => false,
+            }
+        };
+        if !should_reveal {
+            return Ok(());
+        }
+
+        let window = app
+            .get_webview_window(label)
+            .ok_or_else(|| AppError::NotFound("window not found".into()))?;
+        self.show_and_focus(app, &window)
+    }
+
+    /// 启动一个短寿命线程作为兜底定时器；实际显示动作通过 run_on_main_thread 回到主线程执行，
+    /// 因为 macOS 等平台要求窗口操作发生在主线程。
+    /// Spawn a short-lived thread as the fallback timer; the actual show runs through run_on_main_thread
+    /// back on the main thread, because platforms like macOS require window operations there.
+    fn schedule_reveal_fallback(&self, app: &AppHandle<Wry>, label: &str) {
+        let app = app.clone();
+        let label = label.to_string();
+        std::thread::spawn(move || {
+            std::thread::sleep(REVEAL_FALLBACK_TIMEOUT);
+            let callback_app = app.clone();
+            let callback_label = label.clone();
+            if let Err(error) = app.run_on_main_thread(move || {
+                let manager = callback_app.state::<SharedWindowManager>().inner().clone();
+                if let Err(error) = manager.reveal_if_pending(&callback_app, &callback_label) {
+                    log::warn!("[window] reveal fallback for {callback_label} failed: {error}");
+                }
+            }) {
+                log::warn!(
+                    "[window] reveal fallback for {label} failed to reach the main thread: {error}"
+                );
+            }
+        });
     }
 
     /// 将 `label` 标记为可见且已聚焦；焦点互斥，其余窗口全部标记为未聚焦。OS 焦点事件并非总可靠送达，
@@ -786,6 +873,20 @@ pub async fn window_set_dirty(
     state.set_dirty(&app, &label, dirty)
 }
 
+/// 前端首帧绘制完成后调用，显示此前隐藏等待就绪的当前窗口。
+/// label 从调用方的 webview 窗口推导，前端无法伪造其他窗口就绪。
+/// Called by the frontend after its first frame is painted, revealing the calling window that was
+/// hidden pending readiness. The label is derived from the invoking webview window, so the frontend
+/// cannot forge readiness for another window.
+#[tauri::command]
+pub async fn window_reveal(
+    webview_window: WebviewWindow<Wry>,
+    app: AppHandle<Wry>,
+    state: tauri::State<'_, SharedWindowManager>,
+) -> AppResult<()> {
+    state.reveal_if_pending(&app, webview_window.label())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -880,6 +981,7 @@ mod tests {
                     visible: true,
                     focused: false,
                     dirty: false,
+                    pending_reveal: false,
                     created_at,
                     last_focused_at: 0,
                 },
@@ -898,7 +1000,7 @@ mod tests {
         for label in ["a", "b"] {
             manager.windows.write().unwrap().insert(
                 label.to_string(),
-                WindowInstance::new(label.into(), spec.kind, None, true, false),
+                WindowInstance::new(label.into(), spec.kind, None, true, false, false),
             );
         }
 

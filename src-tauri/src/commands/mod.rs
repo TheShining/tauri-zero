@@ -34,6 +34,7 @@ macro_rules! all_handlers {
             platform::window::window_close,
             platform::window::window_force_close,
             platform::window::window_set_dirty,
+            platform::window::window_reveal,
             // --- 托盘命令 ---
             // --- platform::tray ---
             platform::tray::set_close_to_tray,

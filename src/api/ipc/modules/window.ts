@@ -52,3 +52,14 @@ export function forceCloseWindow(label: string) {
 export function setWindowDirty(label: string, dirty: boolean) {
   return ipcInvoke<void>("window_set_dirty", { label, dirty });
 }
+
+/**
+ * 通知后端当前窗口的页面首帧已就绪、可安全显示，消除白屏闪烁。
+ * 窗口 label 由后端从调用方的 webview 推导，无需传参；刻意隐藏的窗口（托盘弹窗）会被后端忽略。
+ * Tells the backend that this window's page has painted its first frame and is safe to show,
+ * eliminating the white flash. The backend derives the label from the calling webview, so no
+ * argument is needed; intentionally hidden windows (the tray popup) are ignored by the backend.
+ */
+export function revealWindow() {
+  return ipcInvoke<void>("window_reveal");
+}
