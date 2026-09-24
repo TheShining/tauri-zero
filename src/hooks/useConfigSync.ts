@@ -1,12 +1,6 @@
-import { useEffect } from "react";
-import { listen } from "@tauri-apps/api/event";
 import { useAppStore } from "../stores/useAppStore";
-import type { Locale, ThemeMode } from "../stores/useAppStore";
-
-interface ConfigChangedPayload {
-  theme: ThemeMode;
-  locale: Locale;
-}
+import { APP_EVENTS } from "../api/ipc/events";
+import { useTauriEvent } from "./useTauriEvent";
 
 /**
  * 全局配置跨窗口同步。任何窗口修改 theme/locale 后，App.tsx 会广播
@@ -22,17 +16,11 @@ interface ConfigChangedPayload {
  * guaranteed by zustand persist through shared localStorage.
  */
 export function useConfigSync() {
-  useEffect(() => {
-    const unlisten = listen<ConfigChangedPayload>("app://config-changed", (event) => {
-      const { theme, locale } = event.payload;
-      const state = useAppStore.getState();
-      if (state.theme !== theme || state.locale !== locale) {
-        useAppStore.setState({ theme, locale });
-      }
-    });
-
-    return () => {
-      void unlisten.then((fn) => fn());
-    };
-  }, []);
+  useTauriEvent(APP_EVENTS.configChanged, (event) => {
+    const { theme, locale } = event.payload;
+    const state = useAppStore.getState();
+    if (state.theme !== theme || state.locale !== locale) {
+      useAppStore.setState({ theme, locale });
+    }
+  });
 }

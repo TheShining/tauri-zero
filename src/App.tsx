@@ -4,6 +4,7 @@ import enUS from "antd/locale/en_US";
 import { useEffect } from "react";
 import { setCloseToTray } from "./api/ipc/modules/app";
 import { emit } from "@tauri-apps/api/event";
+import { APP_EVENTS } from "./api/ipc/events";
 import i18n from "./i18n";
 import AppRouter from "./router";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -45,7 +46,7 @@ export default function App() {
   // 广播主题/语言变更，让托盘弹窗等独立 webview 同步各自的 zustand store 实例。
   // Broadcast theme/locale changes so separate webviews such as the tray popup can sync their own zustand store instances.
   useEffect(() => {
-    void emit("app://config-changed", { theme, locale });
+    void emit(APP_EVENTS.configChanged, { theme, locale });
   }, [theme, locale]);
 
   return (

@@ -1,11 +1,12 @@
 import { Outlet, useNavigate } from "react-router";
 import { Layout } from "antd";
 import { useTranslation } from "react-i18next";
-import { useEffect, useCallback } from "react";
-import { listen } from "@tauri-apps/api/event";
+import { useCallback } from "react";
 import { check } from "@tauri-apps/plugin-updater";
 import TitleBar from "../components/TitleBar";
 import { feedback } from "../components/AppFeedback";
+import { APP_EVENTS } from "../api/ipc/events";
+import { useTauriEvent } from "../hooks/useTauriEvent";
 
 export default function BasicLayout() {
   const { t } = useTranslation();
@@ -29,25 +30,14 @@ export default function BasicLayout() {
     }
   }, [navigate, t]);
 
-  // 监听托盘弹窗事件（由后端发出）。promise-then-cleanup 模式可正确处理组件在 listen() resolve 前卸载的竞态：
-  // .then(fn => fn()) 会把 unlisten 调用推迟到 promise 完成后执行，避免泄漏。
+  // 监听托盘弹窗事件（由后端发出）。
   // Listen for events from the tray popup (the backend emits these).
-  // The promise-then-cleanup pattern handles the race where the component unmounts before listen() resolves:
-  // .then(fn => fn()) defers the unlisten call until the promise settles, preventing leaks.
-  useEffect(() => {
-    const unlistenNav = listen<string>("tray://navigate", (event) => {
-      void navigate(event.payload);
-    });
-
-    const unlistenUpdate = listen("tray://check-update", () => {
-      void handleCheckUpdate();
-    });
-
-    return () => {
-      void unlistenNav.then((fn) => fn());
-      void unlistenUpdate.then((fn) => fn());
-    };
-  }, [navigate, handleCheckUpdate]);
+  useTauriEvent(APP_EVENTS.trayNavigate, (event) => {
+    void navigate(event.payload);
+  });
+  useTauriEvent(APP_EVENTS.trayCheckUpdate, () => {
+    void handleCheckUpdate();
+  });
 
   return (
     <Layout style={{ height: "100vh" }}>

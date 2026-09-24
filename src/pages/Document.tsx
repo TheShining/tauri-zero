@@ -1,10 +1,9 @@
 import { App as AntdApp, Button, Card, Space, Typography } from "antd";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { useParams } from "react-router";
-import { useEffect } from "react";
-import { listen } from "@tauri-apps/api/event";
-import { WINDOW_CONFIRM_CLOSE_EVENT } from "../api/ipc/modules/window";
 import { useTranslation } from "react-i18next";
+import { APP_EVENTS } from "../api/ipc/events";
+import { useTauriEvent } from "../hooks/useTauriEvent";
 import { useWindowStore } from "../stores/useWindowStore";
 import TitleBar from "../components/TitleBar";
 
@@ -26,26 +25,20 @@ export default function Document() {
   // 后端会阻止有未保存内容窗口的关闭，并改为请求当前页面确认；确认事件只定向发送给当前窗口。
   // The backend prevents closing a dirty window and asks this page to confirm instead.
   // The confirm event is targeted at this window only.
-  useEffect(() => {
-    if (!isDocumentWindow) {
-      return;
-    }
-
-    const unlisten = listen<string>(WINDOW_CONFIRM_CLOSE_EVENT, () => {
-      modal.confirm({
-        title: t("document.unsavedTitle"),
-        content: t("document.unsavedContent"),
-        okText: t("document.discardAndClose"),
-        okButtonProps: { danger: true },
-        cancelText: t("document.keepEditing"),
-        onOk: () => forceClose(currentLabel).catch(console.error),
-      });
+  useTauriEvent(APP_EVENTS.windowConfirmClose, () => {
+    // 主窗口中手动导航到文档路由并非真文档窗口，直接忽略确认请求。
+    // A document route manually opened in the main window is not a real document window;
+    // ignore the confirm request there.
+    if (!isDocumentWindow) return;
+    modal.confirm({
+      title: t("document.unsavedTitle"),
+      content: t("document.unsavedContent"),
+      okText: t("document.discardAndClose"),
+      okButtonProps: { danger: true },
+      cancelText: t("document.keepEditing"),
+      onOk: () => forceClose(currentLabel).catch(console.error),
     });
-
-    return () => {
-      void unlisten.then((fn) => fn());
-    };
-  }, [isDocumentWindow, currentLabel, forceClose, modal, t]);
+  });
 
   return (
     <div style={{ height: "100vh", display: "flex", flexDirection: "column" }}>
