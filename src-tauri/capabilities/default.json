@@ -21,6 +21,7 @@
     "notification:default",
     "clipboard-manager:default",
     "shell:default",
+    "os:allow-platform",
     "updater:default",
     "process:default"
   ]

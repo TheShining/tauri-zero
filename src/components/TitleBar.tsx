@@ -5,6 +5,7 @@ import { useEffect, useState, type MouseEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 import { emitTo } from "@tauri-apps/api/event";
+import { platform } from "@tauri-apps/plugin-os";
 import ThemeToggle from "./ThemeToggle";
 import LocaleSwitch from "./LocaleSwitch";
 import { useWindowStore } from "../stores/useWindowStore";
@@ -69,6 +70,9 @@ export default function TitleBar() {
   // 浏览器开发(pnpm dev 无 Tauri 运行时)下降级为静态标题栏，三键变为 no-op。
   const [appWindow] = useState(() => (isTauri() ? getCurrentWindow() : null));
   const [maximized, setMaximized] = useState(false);
+  // macOS 保留系统红绿灯（tauri.conf.json 的 titleBarStyle: Overlay），
+  // 标题栏左侧让位、不渲染自绘三键；platform() 为同步读。
+  const [isMacOS] = useState(() => isTauri() && platform() === "macos");
 
   // 每个窗口的 webview 都有自己的 store 实例；按 label 找到当前窗口的快照。
   const label = appWindow?.label ?? "main";
@@ -129,7 +133,7 @@ export default function TitleBar() {
 
   return (
     <header
-      className={`titlebar${focused ? "" : " titlebar--unfocused"}`}
+      className={`titlebar${focused ? "" : " titlebar--unfocused"}${isMacOS ? " titlebar--macos" : ""}`}
       style={{ background: token.colorBgContainer, borderBottomColor: token.colorBorderSecondary }}
     >
       <div className="titlebar__brand" onMouseDown={handleRegionMouseDown}>
@@ -166,35 +170,37 @@ export default function TitleBar() {
         <LocaleSwitch />
       </div>
 
-      <div className="titlebar__controls">
-        <button
-          type="button"
-          className="titlebar__control"
-          aria-label={t("titlebar.minimize")}
-          title={t("titlebar.minimize")}
-          onClick={() => void appWindow?.minimize().catch(() => undefined)}
-        >
-          <MinimizeIcon />
-        </button>
-        <button
-          type="button"
-          className="titlebar__control"
-          aria-label={maximized ? t("titlebar.restore") : t("titlebar.maximize")}
-          title={maximized ? t("titlebar.restore") : t("titlebar.maximize")}
-          onClick={() => void appWindow?.toggleMaximize().catch(() => undefined)}
-        >
-          {maximized ? <RestoreIcon /> : <MaximizeIcon />}
-        </button>
-        <button
-          type="button"
-          className="titlebar__control titlebar__control--close"
-          aria-label={t("titlebar.close")}
-          title={t("titlebar.close")}
-          onClick={() => void appWindow?.close().catch(() => undefined)}
-        >
-          <CloseIcon />
-        </button>
-      </div>
+      {isMacOS ? null : (
+        <div className="titlebar__controls">
+          <button
+            type="button"
+            className="titlebar__control"
+            aria-label={t("titlebar.minimize")}
+            title={t("titlebar.minimize")}
+            onClick={() => void appWindow?.minimize().catch(() => undefined)}
+          >
+            <MinimizeIcon />
+          </button>
+          <button
+            type="button"
+            className="titlebar__control"
+            aria-label={maximized ? t("titlebar.restore") : t("titlebar.maximize")}
+            title={maximized ? t("titlebar.restore") : t("titlebar.maximize")}
+            onClick={() => void appWindow?.toggleMaximize().catch(() => undefined)}
+          >
+            {maximized ? <RestoreIcon /> : <MaximizeIcon />}
+          </button>
+          <button
+            type="button"
+            className="titlebar__control titlebar__control--close"
+            aria-label={t("titlebar.close")}
+            title={t("titlebar.close")}
+            onClick={() => void appWindow?.close().catch(() => undefined)}
+          >
+            <CloseIcon />
+          </button>
+        </div>
+      )}
     </header>
   );
 }

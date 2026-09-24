@@ -12,6 +12,11 @@
     opacity: 0.65;
   }
 
+  // macOS：左侧让位系统红绿灯（约 78px），自绘三键不渲染
+  &--macos {
+    padding-left: 78px;
+  }
+
   &__brand {
     display: flex;
     align-items: center;
