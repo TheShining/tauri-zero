@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.5.0](https://github.com/TheShining/tauri-zero/compare/v0.4.0...v0.5.0) (2026-09-24)
+
+
+### Features
+
+* **window:** macOS 红绿灯让位与自绘三键分支 / macOS traffic lights accommodation ([0356d23](https://github.com/TheShining/tauri-zero/commit/0356d238dc33587d6077c5a8bdaa1ac9d51688d1))
+* **window:** 子窗口导航与全局配置同步通用化 / generalize child-window nav and config sync ([a3a0cab](https://github.com/TheShining/tauri-zero/commit/a3a0cab683652ad62059dadda93f2eac1e797fdf))
+* **window:** 新增多窗口管理模块 / add multi-window management module ([b60a83c](https://github.com/TheShining/tauri-zero/commit/b60a83caf43d89c1bdabfc37302ccbaa3056a03b))
+* **window:** 无边框窗口、自绘标题栏与 DWM 投影 / frameless window, custom titlebar, native shadow ([3a0bc3f](https://github.com/TheShining/tauri-zero/commit/3a0bc3f86f897c3614c4e8df401516695bebe217))
+* **window:** 首帧就绪后再显示窗口，消除启动白屏 / reveal windows after first frame to fix white flash ([e935933](https://github.com/TheShining/tauri-zero/commit/e9359330da85a2e90ac1819e6f194fe2e8d4d0ae))
+
 ## [0.4.0](https://github.com/TheShining/tauri-zero/compare/v0.3.0...v0.4.0) (2026-09-20)
 
 
