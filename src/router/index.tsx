@@ -1,7 +1,7 @@
 import { RouterProvider } from "react-router";
 import { Spin } from "antd";
 import { Suspense } from "react";
-import WindowReveal from "../components/WindowReveal";
+import WindowReveal from "../app/WindowReveal";
 import { createAppRouter } from "./createAppRouter";
 
 // 懒加载路由解析期间的兜底占位：整窗居中的加载动画，而不是左上角裸文本。

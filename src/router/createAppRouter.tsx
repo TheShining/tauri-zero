@@ -3,11 +3,11 @@ import { lazy } from "react";
 import BasicLayout from "../layouts/BasicLayout";
 import { ROUTES } from "../windows/constants";
 
-const Home = lazy(() => import("../pages/Home"));
-const Settings = lazy(() => import("../pages/Settings"));
-const NotFound = lazy(() => import("../pages/NotFound"));
-const TrayPopup = lazy(() => import("../pages/TrayPopup"));
-const Document = lazy(() => import("../pages/Document"));
+const Home = lazy(() => import("../pages/home/Home"));
+const Settings = lazy(() => import("../pages/settings/Settings"));
+const NotFound = lazy(() => import("../pages/not-found/NotFound"));
+const TrayPopup = lazy(() => import("../pages/tray-popup/TrayPopup"));
+const Document = lazy(() => import("../pages/document/Document"));
 
 export function createAppRouter() {
   return createHashRouter([

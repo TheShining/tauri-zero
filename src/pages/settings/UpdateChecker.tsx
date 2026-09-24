@@ -1,6 +1,6 @@
 import { Button, Card, Space, Typography } from "antd";
 import { useTranslation } from "react-i18next";
-import { useUpdater } from "../hooks/useUpdater";
+import { useUpdater } from "../../hooks/useUpdater";
 
 export default function UpdateChecker() {
   const { t } = useTranslation();

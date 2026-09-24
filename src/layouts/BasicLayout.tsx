@@ -2,7 +2,7 @@ import { Outlet, useNavigate } from "react-router";
 import { Layout } from "antd";
 import { useTranslation } from "react-i18next";
 import { useCallback } from "react";
-import TitleBar from "../components/TitleBar";
+import TitleBar from "./titlebar/TitleBar";
 import { feedback } from "../utils/feedback";
 import { APP_EVENTS } from "../api/ipc/events";
 import { useTauriEvent } from "../hooks/useTauriEvent";

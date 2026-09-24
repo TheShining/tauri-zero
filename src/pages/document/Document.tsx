@@ -2,11 +2,11 @@ import { App as AntdApp, Button, Card, Space, Typography } from "antd";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { useParams } from "react-router";
 import { useTranslation } from "react-i18next";
-import { APP_EVENTS } from "../api/ipc/events";
-import { useTauriEvent } from "../hooks/useTauriEvent";
-import { useWindowStore } from "../windows/store";
-import { documentLabel } from "../windows/constants";
-import TitleBar from "../components/TitleBar";
+import { APP_EVENTS } from "../../api/ipc/events";
+import { useTauriEvent } from "../../hooks/useTauriEvent";
+import { useWindowStore } from "../../windows/store";
+import { documentLabel } from "../../windows/constants";
+import TitleBar from "../../layouts/titlebar/TitleBar";
 
 export default function Document() {
   const { t } = useTranslation();

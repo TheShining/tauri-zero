@@ -7,7 +7,7 @@ import { emit } from "@tauri-apps/api/event";
 import { APP_EVENTS } from "./api/ipc/events";
 import i18n from "./app/i18n";
 import AppRouter from "./router";
-import ErrorBoundary from "./components/ErrorBoundary";
+import ErrorBoundary from "./app/ErrorBoundary";
 import { useAppStore } from "./stores/useAppStore";
 import { useConfigSync } from "./hooks/useConfigSync";
 import { useWindowEvents } from "./windows/useWindowEvents";

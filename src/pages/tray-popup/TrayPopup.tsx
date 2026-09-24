@@ -3,9 +3,9 @@ import { theme as antdTheme } from "antd";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { LogicalSize } from "@tauri-apps/api/dpi";
-import TrayMenu from "../components/TrayMenu";
-import { WINDOW_LABELS } from "../windows/constants";
-import { useAppStore } from "../stores/useAppStore";
+import TrayMenu from "./TrayMenu";
+import { WINDOW_LABELS } from "../../windows/constants";
+import { useAppStore } from "../../stores/useAppStore";
 
 /**
  * 托盘弹窗页面，在专用无边框 Tauri 窗口中通过 /tray-popup 路由渲染；

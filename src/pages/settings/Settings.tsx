@@ -1,7 +1,7 @@
 import { Card, Switch, Typography } from "antd";
 import { useTranslation } from "react-i18next";
-import { useAppStore } from "../stores/useAppStore";
-import UpdateChecker from "../components/UpdateChecker";
+import { useAppStore } from "../../stores/useAppStore";
+import UpdateChecker from "./UpdateChecker";
 
 export default function Settings() {
   const { t } = useTranslation();
