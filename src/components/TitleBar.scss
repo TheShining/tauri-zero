@@ -69,8 +69,8 @@
   }
 
   /*
-   * 压掉 App.css 遗留的全局 button 样式（阴影、白底、边框），保持标题栏扁平。
-   * Override global button styles inherited from App.css (shadow, white background, border) to keep the title bar flat.
+   * 压掉 antd Button 的默认样式（阴影、白底、边框），让操作按钮融入标题栏。
+   * Neutralize default antd Button styling (shadow, white background, border) so action buttons blend into the title bar.
    */
   .ant-btn {
     box-shadow: none;

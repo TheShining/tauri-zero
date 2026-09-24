@@ -7,62 +7,13 @@ import { Link } from "react-router";
 import { emitTo } from "@tauri-apps/api/event";
 import { platform } from "@tauri-apps/plugin-os";
 import ThemeToggle from "./ThemeToggle";
+import WindowControls from "./WindowControls";
 import LocaleSwitch from "./LocaleSwitch";
 import { useWindowStore } from "../stores/useWindowStore";
 import { MAIN_WINDOW_LABEL } from "../api/ipc/modules/window";
 import "./TitleBar.scss";
 
 const appTitle = import.meta.env.APP_PUBLIC_APP_TITLE ?? "tauri-zero";
-
-function MinimizeIcon() {
-  return (
-    <svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true">
-      <line x1="1" y1="6" x2="11" y2="6" stroke="currentColor" strokeWidth="1" />
-    </svg>
-  );
-}
-
-function MaximizeIcon() {
-  return (
-    <svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true">
-      <rect
-        x="1.5"
-        y="1.5"
-        width="9"
-        height="9"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1"
-      />
-    </svg>
-  );
-}
-
-function RestoreIcon() {
-  return (
-    <svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true">
-      <rect
-        x="3.5"
-        y="1"
-        width="7.5"
-        height="7.5"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1"
-      />
-      <path d="M1.5 3.5v7h7" fill="none" stroke="currentColor" strokeWidth="1" />
-    </svg>
-  );
-}
-
-function CloseIcon() {
-  return (
-    <svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true">
-      <line x1="1.5" y1="1.5" x2="10.5" y2="10.5" stroke="currentColor" strokeWidth="1" />
-      <line x1="10.5" y1="1.5" x2="1.5" y2="10.5" stroke="currentColor" strokeWidth="1" />
-    </svg>
-  );
-}
 
 export default function TitleBar() {
   const { t } = useTranslation();
@@ -177,37 +128,7 @@ export default function TitleBar() {
         <LocaleSwitch />
       </div>
 
-      {isMacOS ? null : (
-        <div className="titlebar__controls">
-          <button
-            type="button"
-            className="titlebar__control"
-            aria-label={t("titlebar.minimize")}
-            title={t("titlebar.minimize")}
-            onClick={() => void appWindow?.minimize().catch(() => undefined)}
-          >
-            <MinimizeIcon />
-          </button>
-          <button
-            type="button"
-            className="titlebar__control"
-            aria-label={maximized ? t("titlebar.restore") : t("titlebar.maximize")}
-            title={maximized ? t("titlebar.restore") : t("titlebar.maximize")}
-            onClick={() => void appWindow?.toggleMaximize().catch(() => undefined)}
-          >
-            {maximized ? <RestoreIcon /> : <MaximizeIcon />}
-          </button>
-          <button
-            type="button"
-            className="titlebar__control titlebar__control--close"
-            aria-label={t("titlebar.close")}
-            title={t("titlebar.close")}
-            onClick={() => void appWindow?.close().catch(() => undefined)}
-          >
-            <CloseIcon />
-          </button>
-        </div>
-      )}
+      {isMacOS ? null : <WindowControls appWindow={appWindow} maximized={maximized} />}
     </header>
   );
 }
