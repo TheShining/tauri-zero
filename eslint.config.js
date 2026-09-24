@@ -41,6 +41,34 @@ export default tseslint.config(
     },
   },
 
+  // Tauri 插件统一经 api/ 封装层进入业务代码，禁止页面/组件/hooks 直接 import 插件包。
+  // api/ 目录（含 api/plugins 与 api/http）是允许直接依赖插件的唯一位置。
+  // Tauri plugins must enter business code through the api/ wrapper layer; pages,
+  // components and hooks may not import plugin packages directly. src/api/
+  // (including api/plugins and api/http) is the only place allowed to depend on plugins.
+  {
+    files: ["src/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["@tauri-apps/plugin-*"],
+              message:
+                "请经由 src/api/ 封装层调用 Tauri 插件 / Call Tauri plugins through the src/api/ wrapper layer",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ["src/api/**/*.ts"],
+    rules: {
+      "no-restricted-imports": "off",
+    },
+  },
   // 配置文件（非项目 TS）
   // Configuration files (non-project TypeScript)
   {

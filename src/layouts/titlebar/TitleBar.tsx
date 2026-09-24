@@ -5,7 +5,7 @@ import { useEffect, useState, type MouseEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 import { emitTo } from "@tauri-apps/api/event";
-import { platform } from "@tauri-apps/plugin-os";
+import { osPlatform } from "../../api/plugins/os";
 import ThemeToggle from "../../components/ThemeToggle";
 import WindowControls from "./WindowControls";
 import LocaleSwitch from "../../components/LocaleSwitch";
@@ -26,7 +26,7 @@ export default function TitleBar() {
   const [maximized, setMaximized] = useState(false);
   // macOS 保留系统红绿灯（tauri.conf.json 的 titleBarStyle: Overlay），标题栏左侧让位且不渲染自绘三键；platform() 为同步读取。
   // macOS keeps the system traffic lights (titleBarStyle: Overlay in tauri.conf.json), so the title bar reserves the left side and renders no custom controls; platform() is a synchronous read.
-  const [isMacOS] = useState(() => isTauri() && platform() === "macos");
+  const [isMacOS] = useState(() => isTauri() && osPlatform() === "macos");
 
   // 每个窗口的 webview 都有自己的 store 实例；按 label 找到当前窗口的快照。
   // Every window webview has its own store instance; look up the current window snapshot by label.
