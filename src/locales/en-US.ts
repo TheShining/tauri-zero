@@ -1,4 +1,6 @@
-export default {
+import zhCN from "./zh-CN";
+
+const enUS: typeof zhCN = {
   common: {
     home: "Home",
     notFound: "Page not found",
@@ -61,4 +63,20 @@ export default {
     requestFailed: "Request failed: {{message}}",
     networkError: "Network error, please try again later",
   },
+  theme: {
+    dark: "Dark",
+    light: "Light",
+  },
+  update: {
+    cardTitle: "Updates",
+    checkUpdate: "Check for updates",
+    newVersion: "New version {{version}} available",
+    downloadInstall: "Download & Install",
+  },
+  error: {
+    title: "Something went wrong",
+    reload: "Reload",
+  },
 };
+
+export default enUS;

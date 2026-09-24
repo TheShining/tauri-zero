@@ -60,4 +60,18 @@ export default {
     requestFailed: "请求失败：{{message}}",
     networkError: "网络异常，请稍后重试",
   },
+  theme: {
+    dark: "暗色",
+    light: "亮色",
+  },
+  update: {
+    cardTitle: "更新",
+    checkUpdate: "检查更新",
+    newVersion: "发现新版本 {{version}}",
+    downloadInstall: "下载并安装",
+  },
+  error: {
+    title: "应用出错了",
+    reload: "刷新",
+  },
 };

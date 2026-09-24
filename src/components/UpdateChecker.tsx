@@ -1,20 +1,22 @@
 import { Button, Card, Space, Typography } from "antd";
+import { useTranslation } from "react-i18next";
 import { useUpdater } from "../hooks/useUpdater";
 
 export default function UpdateChecker() {
+  const { t } = useTranslation();
   const { checking, update, checkForUpdates, downloadAndInstall } = useUpdater();
 
   return (
-    <Card title="Updates">
+    <Card title={t("update.cardTitle")}>
       <Space direction="vertical">
         <Button loading={checking} onClick={() => void checkForUpdates()}>
-          Check for updates
+          {t("update.checkUpdate")}
         </Button>
         {update && (
           <>
-            <Typography.Text>New version {update.version} available</Typography.Text>
+            <Typography.Text>{t("update.newVersion", { version: update.version })}</Typography.Text>
             <Button type="primary" onClick={() => void downloadAndInstall()}>
-              Download & Install
+              {t("update.downloadInstall")}
             </Button>
           </>
         )}
