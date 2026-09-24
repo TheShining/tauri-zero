@@ -309,6 +309,7 @@ const settings = await listSettings();
 - 组件、store、hooks 不导入 `invoke`。
 - `src/api/ipc/client.ts` 是唯一 IPC 调用出口；单元测试可以 mock `@tauri-apps/api/core`。
 - 命令名、参数名和 DTO 字段必须与 Rust `#[tauri::command]` 及 serde 约定一致。
+  传给前端的结构体统一 `#[serde(rename_all = "camelCase")]`（如 `Note`），前端 DTO 用 camelCase 字段。
 - Rust 命令返回 `AppResult<T>`，不要返回裸错误或 `Option` 语义模糊的值。
 - 新命令必须注册到 `all_handlers!`。
 - 新事件必须注册到 `src/api/ipc/events.ts` 的 `APP_EVENTS` 与 `AppEventPayloadMap`；组件内订阅统一使用 `useTauriEvent` hook，不手写事件字符串与 listen/cleanup 样板。

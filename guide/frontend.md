@@ -102,7 +102,10 @@ const data = await request<UserInfo>("/user/info", { method: "GET" });
 - 自动拼接 `APP_PUBLIC_API_BASE_URL`
 - 自动注入 `Authorization: Bearer <token>`（可通过 `skipAuth: true` 关闭）
 - 响应约定 `{ code, message, data }`，`code !== 0` 时抛出 `ApiError`
-- 支持 `timeout`、`params`、`body` 等配置
+- 204 无内容响应返回 `undefined`；响应体非 JSON 时抛出 `ApiError`
+- 默认错误拦截器先于业务拦截器执行，统一 `feedback.error` 提示；
+  需要自行处理错误时传 `skipErrorHandler: true` 跳过默认提示
+- 支持 `timeout`、`params`、`body`、`signal` 等配置（调用方 `signal` 与超时信号会合并）
 
 ### 自定义拦截器
 
@@ -177,28 +180,31 @@ return <span>{t("common.home")}</span>;
 ### 新增文案
 
 1. 在 `src/locales/zh-CN.ts` 和 `en-US.ts` 中同步添加 key。
-2. 组件内用 `t("key")` 使用。
+   `en-US.ts` 以 `typeof zh-CN` 约束，漏加 key 会在编译期报类型错误。
+2. 组件内用 `t("key")` 使用；组件里不要写死中英文字符串。
 
 ### 切换语言
 
+组件只改 store，`changeLanguage` 由 `src/App.tsx` 的 effect 统一收口并广播跨窗口同步，
+不要在组件里直接调用：
+
 ```tsx
 import { useAppStore } from "../stores/useAppStore";
-import { useTranslation } from "react-i18next";
 
-const { i18n } = useTranslation();
 const setLocale = useAppStore((s) => s.setLocale);
 
 setLocale("en-US");
-void i18n.changeLanguage("en-US");
 ```
 
 ## 通用组件
 
-- `ErrorBoundary`：全局错误边界，捕获渲染错误并展示兜底页。
+- `ErrorBoundary`：全局错误边界，捕获渲染错误并展示兜底页（文案走 `i18n.t`）。
 - `AppFeedback`：统一消息/通知入口（`feedback.success/error/info/notify`）。
+- `TitleBar`：无边框标题栏（拖拽/导航/主题与语言切换）；窗口三键拆在 `WindowControls.tsx`，
+  SVG 图标在 `TitleBarIcons.tsx`。
 - `ThemeToggle`：明暗主题切换。
 - `LocaleSwitch`：中英切换。
-- `UpdateChecker`：检查更新 UI。
+- `UpdateChecker`：检查更新 UI；检查入口统一走 `useUpdater` hook。
 
 ```tsx
 import { feedback } from "../components/AppFeedback";

@@ -28,11 +28,11 @@ export default function App() {
     });
   }, []);
 
-  // 让 i18n 实例与 zustand locale 保持同步。主窗口中这与 LocaleSwitch 的 changeLanguage 重复，
-  // 但托盘弹窗通过 Tauri 事件更新 locale；没有此 effect，i18n 将无法切换。
-  // Keep the i18n instance in sync with the zustand locale. This is redundant in the main window
-  // (LocaleSwitch already calls changeLanguage), but the tray popup updates its locale through Tauri events;
-  // without this effect, i18n would never switch.
+  // i18n 实例只跟随 zustand locale（changeLanguage 的唯一收口点）：各窗口收到 config-changed 广播
+  // 更新 store 后，由本 effect 完成真正切换，避免组件各自调用 changeLanguage 造成多入口。
+  // The i18n instance follows only the zustand locale (the single owner of changeLanguage): after each window
+  // receives the config-changed broadcast and updates its store, this effect performs the actual switch,
+  // preventing every component from calling changeLanguage on its own.
   useEffect(() => {
     void i18n.changeLanguage(locale);
   }, [locale]);

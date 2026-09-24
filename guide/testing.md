@@ -14,7 +14,8 @@ pnpm test
 - `src/router/index.test.ts`：路由结构与 hash history；
 - `src/stores/useAppStore.test.ts`：`closeToTray` 后端同步失败时的回滚与提示；
 - `src/stores/useUserStore.test.ts`：持久化只包含 user、绝不包含 token；
-- `src/hooks/useTauriEvent.test.tsx`：事件订阅转发、handler 更新不重订阅、卸载退订。
+- `src/hooks/useTauriEvent.test.tsx`：事件订阅转发、handler 更新不重订阅、卸载退订；
+- `src/hooks/useConfigSync.test.tsx`：config-changed 广播应用到 store，值未变时不触发 setState（回声防护）。
 
 ### 新增测试
 
