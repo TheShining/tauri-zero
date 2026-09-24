@@ -8,6 +8,7 @@ export default {
     welcome: "欢迎使用 tauri-zero",
     openSettings: "打开设置",
     closeToTray: "关闭时最小化到托盘",
+    settingsSyncFailed: "设置同步失败，已恢复开关状态",
   },
   windows: {
     title: "窗口管理",

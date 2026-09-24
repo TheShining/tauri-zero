@@ -8,6 +8,7 @@ export default {
     welcome: "Welcome to tauri-zero",
     openSettings: "Open settings",
     closeToTray: "Minimize to tray on close",
+    settingsSyncFailed: "Failed to sync the setting; the switch has been reverted",
   },
   windows: {
     title: "Window Management",
