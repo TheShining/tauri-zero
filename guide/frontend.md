@@ -163,7 +163,7 @@ try {
 
 - `useTauriEvent`：订阅全局 Tauri 事件的统一入口（详见 [前后端通信](./communication.md#tauri-事件)）。
 - `useConfigSync`：把 `app://config-changed` 广播的 theme/locale 应用到当前 webview 的 zustand 实例。
-- `useWindowEvents`（`src/windows/useWindowEvents.ts`）：先注册 `window://changed` 监听、再从 `window_list` 水合窗口镜像（有意不用 useTauriEvent，需要顺序保证）。窗口领域的镜像 store（`windows/store.ts`）、label 常量（`windows/constants.ts`）与 `WindowList` 组件也一并收拢在 `src/windows/`。
+- `useWindowEvents`：先注册 `window://changed` 监听、再从 `window_list` 水合窗口镜像（`src/stores/useWindowStore.ts`，有意不用 useTauriEvent，需要顺序保证）。窗口 label 与 `documentLabel` 作为前后端共享协议，与窗口命令一同定义在 `src/api/ipc/modules/window.ts`。
 - `useUpdater`：封装自动更新的 check / downloadAndInstall / relaunch 流程（插件调用经由 `src/api/plugins/updater.ts`）。
 
 ## 国际化

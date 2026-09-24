@@ -31,9 +31,8 @@ src/                    # 前端源码
   locales/              # i18n 文案
   pages/                # 路由页面，顶级目录按窗口分组 + shared/
   router/               # 路由配置
-  stores/               # zustand 状态（useAppStore / useUserStore）
+  stores/               # zustand 状态（useAppStore / useUserStore / useWindowStore）
   utils/                # 工具函数（feedback 等）
-  windows/              # 窗口领域：镜像 store / 同步 hook / label 常量 / WindowList
 
 src-tauri/              # Rust 端
   migrations/           # SQLite schema 迁移
