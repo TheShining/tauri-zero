@@ -5,7 +5,7 @@ import { useEffect } from "react";
 import { setCloseToTray } from "./api/ipc/modules/app";
 import { emit } from "@tauri-apps/api/event";
 import { APP_EVENTS } from "./api/ipc/events";
-import i18n from "./i18n";
+import i18n from "./app/i18n";
 import AppRouter from "./router";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { useAppStore } from "./stores/useAppStore";

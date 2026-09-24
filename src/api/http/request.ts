@@ -7,8 +7,8 @@ import type {
   ResponseInterceptor,
 } from "./types";
 import { useUserStore } from "../../stores/useUserStore";
-import { feedback } from "../../components/AppFeedback";
-import i18n from "../../i18n";
+import { feedback } from "../../utils/feedback";
+import i18n from "../../app/i18n";
 
 const requestInterceptors: RequestInterceptor[] = [];
 const responseInterceptors: ResponseInterceptor[] = [];

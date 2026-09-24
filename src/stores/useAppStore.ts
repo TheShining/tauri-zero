@@ -1,7 +1,8 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { setCloseToTray } from "../api/ipc/modules/app";
-import { feedback } from "../components/AppFeedback";
+import { feedback } from "../utils/feedback";
+import i18n from "../app/i18n";
 
 export type ThemeMode = "light" | "dark";
 export type Locale = "zh-CN" | "en-US";
@@ -38,12 +39,7 @@ export const useAppStore = create<AppState>()(
           // from the real behavior (switch flipped while the backend keeps the old value).
           set({ closeToTray: previous });
           console.error("[useAppStore] set close-to-tray failed:", error);
-          // 动态引入 i18n 以规避 i18n.ts 反向依赖本 store 造成的循环导入。
-          // Import i18n dynamically to avoid the circular dependency caused by i18n.ts
-          // importing this store back.
-          void import("../i18n").then(({ default: i18n }) => {
-            feedback.error(i18n.t("common.settingsSyncFailed"));
-          });
+          feedback.error(i18n.t("common.settingsSyncFailed"));
         });
       },
     }),

@@ -1,6 +1,6 @@
 import { Component, type ReactNode } from "react";
 import { Result, Button } from "antd";
-import i18n from "../i18n";
+import i18n from "../app/i18n";
 
 interface Props {
   children: ReactNode;

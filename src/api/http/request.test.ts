@@ -6,12 +6,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("./client", () => ({
   httpFetch: vi.fn(),
 }));
-vi.mock("../../components/AppFeedback", () => ({
+vi.mock("../../utils/feedback", () => ({
   feedback: { success: vi.fn(), error: vi.fn(), info: vi.fn(), notify: vi.fn() },
 }));
 
 import { httpFetch } from "./client";
-import { feedback } from "../../components/AppFeedback";
+import { feedback } from "../../utils/feedback";
 import { addErrorInterceptor, ApiError, addRequestInterceptor, request } from "./request";
 import { useUserStore } from "../../stores/useUserStore";
 
