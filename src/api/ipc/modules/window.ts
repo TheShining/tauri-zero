@@ -1,9 +1,20 @@
 import { ipcInvoke } from "../client";
 
-// label 的事实定义在 windows/constants.ts，此处 re-export 仅为维持本模块既有的对外形状。
-// The canonical label lives in windows/constants.ts; re-exported here only to
-// preserve this module's existing public surface.
-import { WINDOW_LABELS } from "../../../windows/constants";
+/**
+ * 窗口 label 是前后端共享的协议（后端 WindowManager 按相同规则生成 label）：
+ * 与窗口命令同一模块，改动 label 规则时命令与常量天然同域。
+ * Window labels are a protocol shared with the backend (the WindowManager generates
+ * them with the same rules): they live next to the window commands so the label
+ * scheme and the commands stay in the same domain.
+ */
+export const WINDOW_LABELS = {
+  main: "main",
+  settings: "settings",
+  trayPopup: "tray-popup",
+} as const;
+
+/** 构建 document 窗口 label：后端 WindowManager 使用同一规则。 / Build a document window label; the backend WindowManager uses the same rule. */
+export const documentLabel = (contextId: string) => `document-${contextId}`;
 
 export const MAIN_WINDOW_LABEL = WINDOW_LABELS.main;
 

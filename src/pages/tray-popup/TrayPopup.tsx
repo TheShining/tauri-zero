@@ -4,7 +4,7 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { LogicalSize } from "@tauri-apps/api/dpi";
 import TrayMenu from "./TrayMenu";
-import { WINDOW_LABELS } from "../../windows/constants";
+import { WINDOW_LABELS } from "../../api/ipc/modules/window";
 import { useAppStore } from "../../stores/useAppStore";
 
 /**

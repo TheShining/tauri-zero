@@ -4,8 +4,8 @@ import { useParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { APP_EVENTS } from "../../api/ipc/events";
 import { useTauriEvent } from "../../hooks/useTauriEvent";
-import { useWindowStore } from "../../windows/store";
-import { documentLabel } from "../../windows/constants";
+import { useWindowStore } from "../../stores/useWindowStore";
+import { documentLabel } from "../../api/ipc/modules/window";
 import TitleBar from "../../layouts/titlebar/TitleBar";
 
 export default function Document() {

@@ -2,8 +2,8 @@ import { Button, Card, Input, Space, Typography } from "antd";
 import { Link } from "react-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import WindowList from "../../windows/WindowList";
-import { useWindowStore } from "../../windows/store";
+import WindowList from "./WindowList";
+import { useWindowStore } from "../../stores/useWindowStore";
 
 export default function Home() {
   const { t } = useTranslation();

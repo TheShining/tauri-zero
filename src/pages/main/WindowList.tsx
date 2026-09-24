@@ -1,8 +1,8 @@
 import { Button, Empty, Space, Table, Tag, type TableProps } from "antd";
 import { useTranslation } from "react-i18next";
-import type { WindowSnapshot } from "../api/ipc/modules/window";
-import { WINDOW_LABELS } from "./constants";
-import { useWindowStore } from "./store";
+import type { WindowSnapshot } from "../../api/ipc/modules/window";
+import { WINDOW_LABELS } from "../../api/ipc/modules/window";
+import { useWindowStore } from "../../stores/useWindowStore";
 
 export default function WindowList() {
   const { t } = useTranslation();

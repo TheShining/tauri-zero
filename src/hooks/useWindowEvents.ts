@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { APP_EVENTS } from "../api/ipc/events";
 import type { WindowSnapshot } from "../api/ipc/modules/window";
-import { useWindowStore } from "./store";
+import { useWindowStore } from "../stores/useWindowStore";
 
 /**
  * 让前端窗口镜像与 Rust WindowManager 保持同步。先注册监听器再从 `window_list` 水合，

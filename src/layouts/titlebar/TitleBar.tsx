@@ -9,10 +9,10 @@ import { osPlatform } from "../../api/plugins/os";
 import ThemeToggle from "../../components/ThemeToggle";
 import WindowControls from "./WindowControls";
 import LocaleSwitch from "../../components/LocaleSwitch";
-import { useWindowStore } from "../../windows/store";
-import { MAIN_WINDOW_LABEL } from "../../api/ipc/modules/window";
+import { useWindowStore } from "../../stores/useWindowStore";
+import { MAIN_WINDOW_LABEL, WINDOW_LABELS } from "../../api/ipc/modules/window";
 import { APP_EVENTS } from "../../api/ipc/events";
-import { WINDOW_LABELS } from "../../windows/constants";
+
 import "./TitleBar.scss";
 
 const appTitle = import.meta.env.APP_PUBLIC_APP_TITLE ?? "tauri-zero";
