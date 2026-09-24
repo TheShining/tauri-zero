@@ -2,15 +2,26 @@
 
 ## 前端测试
 
-使用 Vitest + jsdom。示例见 `src/router/index.test.ts`。
+使用 Vitest + jsdom。
 
 ```bash
 pnpm test
 ```
 
+当前前端测试：
+
+- `src/api/ipc/client.test.ts`：IPC 包装层的返回值透传与错误归一化；
+- `src/router/index.test.ts`：路由结构与 hash history；
+- `src/stores/useAppStore.test.ts`：`closeToTray` 后端同步失败时的回滚与提示；
+- `src/stores/useUserStore.test.ts`：持久化只包含 user、绝不包含 token；
+- `src/hooks/useTauriEvent.test.tsx`：事件订阅转发、handler 更新不重订阅、卸载退订。
+
 ### 新增测试
 
-在目标文件旁创建 `*.test.ts` / `*.test.tsx`，使用 `@testing-library/react` 渲染组件。
+在目标文件旁创建 `*.test.ts` / `*.test.tsx`。项目**未安装** `@testing-library/react`：
+纯逻辑直接调用；组件与 hook 用 React 的 `act` + `createRoot` 手动挂载
+（参考 `src/hooks/useTauriEvent.test.tsx`，需设置 `IS_REACT_ACT_ENVIRONMENT`），
+Tauri API 用 `vi.mock("@tauri-apps/api/...")` 拦截。
 
 ## Rust 测试
 

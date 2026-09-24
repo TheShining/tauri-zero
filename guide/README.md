@@ -51,4 +51,5 @@ src-tauri/              # Rust 端
 - 新增页面在 `src/pages/` 下创建，并在 `src/router/createAppRouter.tsx` 注册。
 - 新增业务命令放在 `src-tauri/src/domain/<domain>/command.rs`，并在 `commands/mod.rs` 的 `all_handlers!` 中注册。
 - 新增平台命令放在 `src-tauri/src/platform/<capability>.rs`，同样在 `all_handlers!` 中注册。
+- 自定义 Tauri 事件统一注册到 `src/api/ipc/events.ts` 的 `APP_EVENTS`；组件内订阅使用 `useTauriEvent` hook，不手写事件字符串。
 - 新增表或字段时，在 `src-tauri/migrations/` 中新增 SQL 迁移文件，不要修改历史迁移。

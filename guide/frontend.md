@@ -14,6 +14,8 @@ import BasicLayout from "../layouts/BasicLayout";
 const Home = lazy(() => import("../pages/Home"));
 const Settings = lazy(() => import("../pages/Settings"));
 const NotFound = lazy(() => import("../pages/NotFound"));
+const TrayPopup = lazy(() => import("../pages/TrayPopup"));
+const Document = lazy(() => import("../pages/Document"));
 
 export function createAppRouter() {
   return createHashRouter([
@@ -26,9 +28,17 @@ export function createAppRouter() {
         { path: "*", element: <NotFound /> },
       ],
     },
+    // 独立窗口路由：不使用 BasicLayout，在专用无边框窗口中渲染
+    { path: "/tray-popup", element: <TrayPopup /> },
+    { path: "/documents/:contextId", element: <Document /> },
   ]);
 }
 ```
+
+`src/router/index.tsx` 中的 router 是**模块级单例**（`const router = createAppRouter()`），并随
+`Suspense` 一起挂了 `WindowReveal`：真实页面首帧就绪前窗口保持隐藏，消除白屏闪烁。
+不要在组件渲染函数体内调用 `createAppRouter()`——上层重渲染时会生成全新 router 实例，
+破坏路由内部状态；`createAppRouter()` 保留导出仅用于单元测试按需构造独立实例。
 
 ### 新增页面
 
@@ -40,8 +50,11 @@ export function createAppRouter() {
 
 使用 `zustand` v5，统一放在 `src/stores/`。内置两个示例 store：
 
-- `useAppStore`：主题、语言、主题色（persist 持久化到 localStorage）
-- `useUserStore`：用户信息、token、登出（persist 持久化）
+- `useAppStore`：主题、语言、主题色、关闭到托盘（persist 持久化到 localStorage）；
+  主题/语言变更会广播 `app://config-changed` 跨窗口同步；`closeToTray` 同步后端失败时
+  会自动回滚开关并通过 `feedback.error` 提示用户
+- `useUserStore`：用户信息、token、登出；通过 `partialize` **仅持久化 user 基本信息，
+  token 只驻留内存**，应用重启后需重新认证获取
 
 ```tsx
 import { useAppStore } from "../stores/useAppStore";
@@ -142,6 +155,13 @@ try {
 ```
 
 详细分层、错误契约和事件用法见 [前后端通信](./communication.md)。
+
+## 自定义 Hooks
+
+- `useTauriEvent`：订阅全局 Tauri 事件的统一入口（详见 [前后端通信](./communication.md#tauri-事件)）。
+- `useConfigSync`：把 `app://config-changed` 广播的 theme/locale 应用到当前 webview 的 zustand 实例。
+- `useWindowEvents`：先注册 `window://changed` 监听、再从 `window_list` 水合窗口镜像（有意不用 useTauriEvent，需要顺序保证）。
+- `useUpdater`：封装 `plugin-updater` 的 check / downloadAndInstall / relaunch 流程。
 
 ## 国际化
 

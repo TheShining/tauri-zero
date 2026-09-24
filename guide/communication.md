@@ -84,11 +84,13 @@ src/api/
 └── ipc/               # 本地 Tauri IPC，只走 Rust command
     ├── client.ts       # ipcInvoke<T>() + AppIpcError
     ├── client.test.ts  # IPC wrapper 测试
+    ├── events.ts       # APP_EVENTS 事件名注册表 + payload 类型映射
     └── modules/
         ├── app.ts      # setCloseToTray
         ├── fs.ts       # readTextFile / writeTextFile / fileExists
         ├── note.ts     # Note CRUD
-        └── tray.ts     # TrayAction / trayAction
+        ├── tray.ts     # TrayAction / trayAction
+        └── window.ts   # 窗口管理：open/list/focus/hide/close/reveal
 ```
 
 组件中的用法：
@@ -201,35 +203,57 @@ macro_rules! all_handlers {
 
 ## Tauri 事件
 
-命令适合「前端请求 → 等待结果」的场景。窗口间通知和 Rust 主动通知使用 Tauri Event：
+命令适合「前端请求 → 等待结果」的场景。窗口间通知和 Rust 主动通知使用 Tauri Event。
 
-| 事件 | 方向 | Payload | 用途 |
-|------|------|---------|------|
-| `app://config-changed` | main window → tray popup | `{ theme, locale }` | 同步主题和语言 |
-| `tray://navigate` | Rust → main window | `"/settings"` | 托盘设置项让主窗口跳转 |
-| `tray://check-update` | Rust → main window | `null` | 触发更新检查 |
+**所有自定义事件必须先注册到 `src/api/ipc/events.ts` 的 `APP_EVENTS`，并在 `AppEventPayloadMap` 中声明 payload 类型**；组件与 hook 不允许再手写事件字符串。
 
-示例：
+```ts
+// src/api/ipc/events.ts
+export const APP_EVENTS = {
+  configChanged: "app://config-changed",
+  trayNavigate: "tray://navigate",
+  trayCheckUpdate: "tray://check-update",
+  windowChanged: "window://changed",
+  windowConfirmClose: "window://confirm-close",
+} as const;
+```
 
-```tsx
+当前注册的事件：
+
+| 常量 | 事件名 | 方向 | Payload | 用途 |
+|------|--------|------|---------|------|
+| `APP_EVENTS.configChanged` | `app://config-changed` | 任意窗口 → 全部窗口 | `{ theme, locale }` | 主题/语言跨窗口同步 |
+| `APP_EVENTS.trayNavigate` | `tray://navigate` | 托盘弹窗/子窗口 → main | `"/settings"` | 让主窗口跳转路由 |
+| `APP_EVENTS.trayCheckUpdate` | `tray://check-update` | Rust → main window | `null` | 触发更新检查 |
+| `APP_EVENTS.windowChanged` | `window://changed` | Rust → 全部窗口 | `WindowSnapshot[]` | 窗口注册表快照推送 |
+| `APP_EVENTS.windowConfirmClose` | `window://confirm-close` | Rust → 目标窗口 | window label | 请求前端确认关闭（有未保存内容） |
+
+### 发送事件
+
+```ts
 import { emit } from "@tauri-apps/api/event";
+import { APP_EVENTS } from "../api/ipc/events";
 
-await emit("app://config-changed", { theme, locale });
+await emit(APP_EVENTS.configChanged, { theme, locale });
 ```
+
+### 订阅事件
+
+组件与 hook 中统一使用 `useTauriEvent`（`src/hooks/useTauriEvent.ts`），它内部处理了：
+
+- handler 通过 ref 引用最新闭包，handler 身份变化不会反复订阅/退订；
+- promise-then-cleanup 竞态：组件在 `listen()` resolve 前卸载时，unlisten 会被推迟到 promise 完成后执行，监听器不泄漏。
 
 ```tsx
-import { listen } from "@tauri-apps/api/event";
+import { APP_EVENTS } from "../api/ipc/events";
+import { useTauriEvent } from "../hooks/useTauriEvent";
 
-const unlisten = await listen<string>("tray://navigate", (event) => {
-  // event.payload === "/settings"
+useTauriEvent(APP_EVENTS.trayNavigate, (event) => {
+  void navigate(event.payload); // payload 类型由注册表自动推断为 string
 });
-
-return () => {
-  void unlisten();
-};
 ```
 
-事件监听不在 `ipcInvoke()` 管辖范围内；如后续事件数量增加，可以在 `src/api/ipc/events.ts` 中继续封装事件名和 payload 类型。
+需要控制「先 listen 成功、再拉取快照」这类顺序保证时（如 `useWindowEvents`），保留手写 `listen` 模式并注明原因。
 
 ## 新增 IPC Command
 
@@ -287,5 +311,6 @@ const settings = await listSettings();
 - 命令名、参数名和 DTO 字段必须与 Rust `#[tauri::command]` 及 serde 约定一致。
 - Rust 命令返回 `AppResult<T>`，不要返回裸错误或 `Option` 语义模糊的值。
 - 新命令必须注册到 `all_handlers!`。
+- 新事件必须注册到 `src/api/ipc/events.ts` 的 `APP_EVENTS` 与 `AppEventPayloadMap`；组件内订阅统一使用 `useTauriEvent` hook，不手写事件字符串与 listen/cleanup 样板。
 - 外部 HTTP 继续使用 `request<T>()`，不要伪装成 IPC command。
 - 需要窗口权限的平台能力，在 `src-tauri/capabilities/default.json` 中显式声明。
