@@ -17,11 +17,20 @@ const suspenseFallback = (
   </div>
 );
 
+// 模块级单例：RouterProvider 要求 router 实例跨渲染保持稳定，若在组件函数体内创建，
+// 上层 App 因主题/语言变化重渲染时会生成全新 router，导致路由内部状态（订阅、导航历史）被破坏。
+// 工厂函数 createAppRouter 仍导出供单元测试按需构造独立实例。
+// Module-level singleton: RouterProvider requires a stable router instance across renders.
+// Creating it inside the component body would produce a brand-new router whenever the parent
+// App re-renders on theme/locale changes, breaking internal router state (subscriptions, navigation history).
+// The createAppRouter factory stays exported so unit tests can build isolated instances on demand.
+const router = createAppRouter();
+
 export default function AppRouter() {
   return (
     <Suspense fallback={suspenseFallback}>
       <WindowReveal />
-      <RouterProvider router={createAppRouter()} />
+      <RouterProvider router={router} />
     </Suspense>
   );
 }
