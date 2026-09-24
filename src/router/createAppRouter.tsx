@@ -2,9 +2,9 @@ import { createHashRouter } from "react-router";
 import { lazy } from "react";
 import BasicLayout from "../layouts/BasicLayout";
 
-const Home = lazy(() => import("../pages/home/Home"));
+const Home = lazy(() => import("../pages/main/Home"));
 const Settings = lazy(() => import("../pages/settings/Settings"));
-const NotFound = lazy(() => import("../pages/not-found/NotFound"));
+const NotFound = lazy(() => import("../pages/shared/NotFound"));
 const TrayPopup = lazy(() => import("../pages/tray-popup/TrayPopup"));
 const Document = lazy(() => import("../pages/document/Document"));
 
