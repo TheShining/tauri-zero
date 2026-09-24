@@ -50,4 +50,10 @@ export default {
     upToDate: "Already up to date",
     updateFailed: "Check update failed",
   },
+  titlebar: {
+    minimize: "Minimize",
+    maximize: "Maximize",
+    restore: "Restore",
+    close: "Close",
+  },
 };

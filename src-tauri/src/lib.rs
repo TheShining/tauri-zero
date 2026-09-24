@@ -67,6 +67,10 @@ pub fn run() {
             window_manager
                 .initialize_existing(app.handle())
                 .map_err(|e| std::io::Error::other(e.to_string()))?;
+            // 主窗口在 tauri.conf.json 静态声明，同样移除 Win11 DWM 的 1px 灰边
+            if let Some(main_window) = app.get_webview_window(platform::window::MAIN_WINDOW_LABEL) {
+                platform::dwm::polish_borderless_window(&main_window);
+            }
             platform::tray::create_tray(app.handle())
                 .map_err(|e| std::io::Error::other(e.to_string()))?;
             Ok(())

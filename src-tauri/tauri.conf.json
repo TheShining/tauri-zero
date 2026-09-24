@@ -14,6 +14,10 @@
       {
         "label": "main",
         "title": "tauri-zero",
+        "decorations": false,
+        "shadow": false,
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true,
         "width": 800,
         "height": 600
       },

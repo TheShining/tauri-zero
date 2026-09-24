@@ -32,6 +32,11 @@ export default function App() {
     void i18n.changeLanguage(locale);
   }, [locale]);
 
+  // 让原生控件（滚动条等）跟随明暗主题，避免暗色下出现白底滚动条
+  useEffect(() => {
+    document.documentElement.style.colorScheme = theme;
+  }, [theme]);
+
   // Broadcast theme/locale changes so the tray popup (separate webview)
   // can sync its own zustand store instance.
   useEffect(() => {

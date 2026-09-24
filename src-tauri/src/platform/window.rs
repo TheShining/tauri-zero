@@ -1,4 +1,5 @@
 use crate::error::{AppError, AppResult};
+use crate::platform::dwm;
 use crate::state::SharedConfigState;
 use serde::{Deserialize, Serialize};
 use std::{
@@ -194,8 +195,20 @@ impl WindowManager {
                     .title(creation.title)
                     .inner_size(creation.width, creation.height)
                     .resizable(creation.resizable)
-                    .build()
-                    .map_err(|error| window_error("create window", error))?;
+                    // 无边框：标题栏由前端 TitleBar 组件自绘
+                    .decorations(false)
+                    // 关闭 DWM 假阴影：Windows 10 上会残留 1px 灰边 + 放大窗口尺寸
+                    .shadow(false);
+                    // macOS: 保留原生红绿灯按钮（Overlay 风格），Windows/Linux 忽略
+                    #[cfg(target_os = "macos")]
+                    let window = window
+                        .title_bar_style(tauri::utils::TitleBarStyle::Overlay)
+                        .hidden_title(true);
+                    let window = window
+                        .build()
+                        .map_err(|error| window_error("create window", error))?;
+                    // Windows 11 DWM 默认给无边框窗口画 1px 灰边，移除之
+                    dwm::polish_borderless_window(&window);
 
                     self.register_existing_window(&window, spec, context_id)?;
                     true

@@ -1,0 +1,20 @@
+/*
+ * 全局滚动收敛：桌面应用窗口级（html/body）永远不出滚动条。
+ * 溢出由布局容器内部滚动（如 antd Layout.Content），
+ * 避免窗口级滚动条把标题栏一起推走。
+ */
+html,
+body {
+  overflow: hidden;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+/* 细滚动条弱化存在感；Windows Chromium 下颜色随 color-scheme 自适应明暗主题 */
+* {
+  scrollbar-width: thin;
+}

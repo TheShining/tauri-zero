@@ -6,6 +6,7 @@ import { listen } from "@tauri-apps/api/event";
 import { WINDOW_CONFIRM_CLOSE_EVENT } from "../api/ipc/modules/window";
 import { useTranslation } from "react-i18next";
 import { useWindowStore } from "../stores/useWindowStore";
+import TitleBar from "../components/TitleBar";
 
 export default function Document() {
   const { t } = useTranslation();
@@ -46,30 +47,33 @@ export default function Document() {
   }, [isDocumentWindow, currentLabel, forceClose, modal, t]);
 
   return (
-    <Card title={t("document.title")} style={{ minHeight: "100vh" }}>
-      <Space direction="vertical" size="middle">
-        <Typography.Paragraph>
-          {t("document.contextId")}: <Typography.Text code>{contextId}</Typography.Text>
-        </Typography.Paragraph>
+    <div style={{ height: "100vh", display: "flex", flexDirection: "column" }}>
+      <TitleBar />
+      <Card title={t("document.title")} style={{ flex: 1, overflow: "auto", borderRadius: 0 }}>
+        <Space direction="vertical" size="middle">
+          <Typography.Paragraph>
+            {t("document.contextId")}: <Typography.Text code>{contextId}</Typography.Text>
+          </Typography.Paragraph>
 
-        <Typography.Paragraph type="secondary">
-          {isDocumentWindow ? t("document.windowHint") : t("document.mainWindowHint")}
-        </Typography.Paragraph>
+          <Typography.Paragraph type="secondary">
+            {isDocumentWindow ? t("document.windowHint") : t("document.mainWindowHint")}
+          </Typography.Paragraph>
 
-        {isDocumentWindow ? (
-          <Space wrap>
-            <Button
-              disabled={!snapshot}
-              onClick={() => void setDirty(currentLabel, !snapshot?.dirty).catch(console.error)}
-            >
-              {snapshot?.dirty ? t("document.markClean") : t("document.markDirty")}
-            </Button>
-            <Button danger onClick={() => void close(currentLabel).catch(console.error)}>
-              {t("windows.close")}
-            </Button>
-          </Space>
-        ) : null}
-      </Space>
-    </Card>
+          {isDocumentWindow ? (
+            <Space wrap>
+              <Button
+                disabled={!snapshot}
+                onClick={() => void setDirty(currentLabel, !snapshot?.dirty).catch(console.error)}
+              >
+                {snapshot?.dirty ? t("document.markClean") : t("document.markDirty")}
+              </Button>
+              <Button danger onClick={() => void close(currentLabel).catch(console.error)}>
+                {t("windows.close")}
+              </Button>
+            </Space>
+          ) : null}
+        </Space>
+      </Card>
+    </div>
   );
 }
