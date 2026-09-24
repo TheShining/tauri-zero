@@ -10,7 +10,7 @@ import AppRouter from "./router";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { useAppStore } from "./stores/useAppStore";
 import { useConfigSync } from "./hooks/useConfigSync";
-import { useWindowEvents } from "./hooks/useWindowEvents";
+import { useWindowEvents } from "./windows/useWindowEvents";
 
 export default function App() {
   useWindowEvents();

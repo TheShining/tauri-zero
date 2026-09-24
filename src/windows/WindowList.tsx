@@ -1,7 +1,8 @@
 import { Button, Empty, Space, Table, Tag, type TableProps } from "antd";
 import { useTranslation } from "react-i18next";
 import type { WindowSnapshot } from "../api/ipc/modules/window";
-import { useWindowStore } from "../stores/useWindowStore";
+import { WINDOW_LABELS } from "./constants";
+import { useWindowStore } from "./store";
 
 export default function WindowList() {
   const { t } = useTranslation();
@@ -49,7 +50,7 @@ export default function WindowList() {
       key: "actions",
       align: "end",
       render: (_: unknown, record: WindowSnapshot) => {
-        const canHide = record.visible && record.kind !== "tray-popup";
+        const canHide = record.visible && record.kind !== WINDOW_LABELS.trayPopup;
         const canClose = record.kind === "settings" || record.kind === "document";
 
         return (

@@ -4,7 +4,8 @@ import { useParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { APP_EVENTS } from "../api/ipc/events";
 import { useTauriEvent } from "../hooks/useTauriEvent";
-import { useWindowStore } from "../stores/useWindowStore";
+import { useWindowStore } from "../windows/store";
+import { documentLabel } from "../windows/constants";
 import TitleBar from "../components/TitleBar";
 
 export default function Document() {
@@ -12,7 +13,7 @@ export default function Document() {
   const { modal } = AntdApp.useApp();
   const { contextId = "" } = useParams<{ contextId: string }>();
   const currentLabel = getCurrentWebviewWindow().label;
-  const expectedLabel = `document-${contextId}`;
+  const expectedLabel = documentLabel(contextId);
   const isDocumentWindow = currentLabel === expectedLabel;
 
   const snapshot = useWindowStore((state) =>

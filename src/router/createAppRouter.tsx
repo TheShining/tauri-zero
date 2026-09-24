@@ -1,6 +1,7 @@
 import { createHashRouter } from "react-router";
 import { lazy } from "react";
 import BasicLayout from "../layouts/BasicLayout";
+import { ROUTES } from "../windows/constants";
 
 const Home = lazy(() => import("../pages/Home"));
 const Settings = lazy(() => import("../pages/Settings"));
@@ -11,7 +12,7 @@ const Document = lazy(() => import("../pages/Document"));
 export function createAppRouter() {
   return createHashRouter([
     {
-      path: "/",
+      path: ROUTES.home,
       element: <BasicLayout />,
       children: [
         { index: true, element: <Home /> },
@@ -22,7 +23,7 @@ export function createAppRouter() {
     {
       // 托盘弹窗是独立顶级路由（不使用 BasicLayout），渲染在专用无边框 Tauri 窗口中。
       // Tray popup is a standalone top-level route (no BasicLayout) rendered in its own frameless Tauri window.
-      path: "/tray-popup",
+      path: ROUTES.trayPopup,
       element: <TrayPopup />,
     },
     {

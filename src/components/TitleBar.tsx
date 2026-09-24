@@ -9,8 +9,10 @@ import { platform } from "@tauri-apps/plugin-os";
 import ThemeToggle from "./ThemeToggle";
 import WindowControls from "./WindowControls";
 import LocaleSwitch from "./LocaleSwitch";
-import { useWindowStore } from "../stores/useWindowStore";
+import { useWindowStore } from "../windows/store";
 import { MAIN_WINDOW_LABEL } from "../api/ipc/modules/window";
+import { APP_EVENTS } from "../api/ipc/events";
+import { WINDOW_LABELS } from "../windows/constants";
 import "./TitleBar.scss";
 
 const appTitle = import.meta.env.APP_PUBLIC_APP_TITLE ?? "tauri-zero";
@@ -28,7 +30,7 @@ export default function TitleBar() {
 
   // 每个窗口的 webview 都有自己的 store 实例；按 label 找到当前窗口的快照。
   // Every window webview has its own store instance; look up the current window snapshot by label.
-  const label = appWindow?.label ?? "main";
+  const label = appWindow?.label ?? WINDOW_LABELS.main;
   const snapshot = useWindowStore((state) => state.windows.find((w) => w.label === label));
   const focused = snapshot?.focused ?? true;
   const dirty = snapshot?.dirty ?? false;
@@ -43,7 +45,7 @@ export default function TitleBar() {
   const handleNavClick = (to: string) => (event: MouseEvent<HTMLAnchorElement>) => {
     if (isMain) return;
     event.preventDefault();
-    void emitTo(MAIN_WINDOW_LABEL, "tray://navigate", to).catch((error) => {
+    void emitTo(MAIN_WINDOW_LABEL, APP_EVENTS.trayNavigate, to).catch((error) => {
       console.error("[TitleBar] forward navigation failed:", error);
     });
     void focus(MAIN_WINDOW_LABEL).catch((error) => {
@@ -52,7 +54,7 @@ export default function TitleBar() {
   };
   // 无边框后原生标题不可见；settings/document 窗口用语义标题或上下文顶替。
   // After going frameless the native title is invisible; settings/document windows use a semantic title or context instead.
-  const titleSuffix = contextId ?? (label === "settings" ? t("common.settings") : null);
+  const titleSuffix = contextId ?? (label === WINDOW_LABELS.settings ? t("common.settings") : null);
 
   useEffect(() => {
     if (!appWindow) return;

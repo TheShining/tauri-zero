@@ -1,6 +1,11 @@
 import { ipcInvoke } from "../client";
 
-export const MAIN_WINDOW_LABEL = "main";
+// label 的事实定义在 windows/constants.ts，此处 re-export 仅为维持本模块既有的对外形状。
+// The canonical label lives in windows/constants.ts; re-exported here only to
+// preserve this module's existing public surface.
+import { WINDOW_LABELS } from "../../../windows/constants";
+
+export const MAIN_WINDOW_LABEL = WINDOW_LABELS.main;
 
 export type WindowKind = "main" | "tray-popup" | "settings" | "document";
 

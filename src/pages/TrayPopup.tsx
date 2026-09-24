@@ -4,6 +4,7 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { LogicalSize } from "@tauri-apps/api/dpi";
 import TrayMenu from "../components/TrayMenu";
+import { WINDOW_LABELS } from "../windows/constants";
 import { useAppStore } from "../stores/useAppStore";
 
 /**
@@ -22,7 +23,7 @@ export default function TrayPopup() {
   // and miss config-changed events; re-reading persisted state on focus ensures the latest theme and locale are applied.
   useEffect(() => {
     const win = getCurrentWindow();
-    if (win.label !== "tray-popup") return;
+    if (win.label !== WINDOW_LABELS.trayPopup) return;
 
     const unlisten = win.onFocusChanged(({ payload: focused }) => {
       if (focused) {
@@ -47,7 +48,7 @@ export default function TrayPopup() {
   // if someone navigates to /tray-popup in the main window, it is a no-op.
   useEffect(() => {
     const win = getCurrentWebviewWindow();
-    if (win.label !== "tray-popup") return;
+    if (win.label !== WINDOW_LABELS.trayPopup) return;
 
     const menu = document.querySelector<HTMLElement>(".tray-menu");
     if (!menu) return;
