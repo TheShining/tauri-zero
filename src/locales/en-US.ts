@@ -57,4 +57,8 @@ export default {
     restore: "Restore",
     close: "Close",
   },
+  http: {
+    requestFailed: "Request failed: {{message}}",
+    networkError: "Network error, please try again later",
+  },
 };

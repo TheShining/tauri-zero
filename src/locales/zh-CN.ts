@@ -56,4 +56,8 @@ export default {
     restore: "还原",
     close: "关闭",
   },
+  http: {
+    requestFailed: "请求失败：{{message}}",
+    networkError: "网络异常，请稍后重试",
+  },
 };
