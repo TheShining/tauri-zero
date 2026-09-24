@@ -22,7 +22,8 @@ export function addErrorInterceptor(interceptor: ErrorInterceptor) {
   errorInterceptors.push(interceptor);
 }
 
-// 默认请求拦截器：注入 token
+// 默认请求拦截器，注入 token。
+// Default request interceptor that injects the token.
 addRequestInterceptor((config) => {
   const token = useUserStore.getState().token;
   if (token && !config.skipAuth) {

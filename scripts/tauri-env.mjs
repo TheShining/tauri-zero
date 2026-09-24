@@ -16,6 +16,7 @@ function resolveMode(command) {
     return mode;
   }
 
+  // Tauri 默认行为：`tauri dev` 是 debug 构建，`tauri build` 是 release 构建。
   // Tauri defaults: `tauri dev` is a debug build, `tauri build` is release.
   return command === "build" ? "production" : "development";
 }
@@ -31,6 +32,7 @@ function targetDirectory(cliArgs) {
       ? cliArgs.find((argument) => argument.startsWith("--target="))?.slice("--target=".length)
       : cliArgs[targetIndex + 1];
 
+  // Tauri 将交叉目标构建产物放在 target/<triple>/release/bundle。
   // Tauri places cross-target builds in target/<triple>/release/bundle.
   return targetArgument
     ? join("src-tauri", "target", targetArgument, "release", "bundle")
@@ -65,6 +67,7 @@ function renameNewBundleFiles(root, previousFiles, suffix) {
   const rootPath = resolve(root);
 
   for (const [path, modifiedAt] of currentFiles) {
+    // 只重命名本次构建创建或覆盖的文件。
     // Only rename files created or overwritten by this build.
     if (previousFiles.get(path) === modifiedAt) {
       continue;

@@ -1,7 +1,9 @@
 /*
- * 全局滚动收敛：桌面应用窗口级（html/body）永远不出滚动条。
- * 溢出由布局容器内部滚动（如 antd Layout.Content），
- * 避免窗口级滚动条把标题栏一起推走。
+ * 全局滚动收敛。桌面应用的窗口级（html/body）永远不出现滚动条；
+ * 溢出由布局容器内部滚动（如 antd Layout.Content），避免窗口级滚动条把标题栏一起推走。
+ * Global scroll convergence. The window level (html/body) never scrolls in the desktop app;
+ * overflow scrolls inside layout containers such as antd Layout.Content, preventing window-level
+ * scrollbars from shifting the title bar.
  */
 html,
 body {
@@ -14,7 +16,10 @@ body,
   height: 100%;
 }
 
-/* 细滚动条弱化存在感；Windows Chromium 下颜色随 color-scheme 自适应明暗主题 */
+/*
+ * 细滚动条弱化存在感；Windows Chromium 下颜色随 color-scheme 自适应明暗主题。
+ * Thin scrollbars reduce visual noise; colors adapt to light and dark themes through color-scheme on Windows Chromium.
+ */
 * {
   scrollbar-width: thin;
 }

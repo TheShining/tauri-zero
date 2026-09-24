@@ -4,10 +4,11 @@ import { WINDOW_CHANGED_EVENT, type WindowSnapshot } from "../api/ipc/modules/wi
 import { useWindowStore } from "../stores/useWindowStore";
 
 /**
+ * 让前端窗口镜像与 Rust WindowManager 保持同步。先注册监听器再从 `window_list` 水合，
+ * 避免漏掉应用启动到页面加载之间发出的事件。
  * Keeps the frontend window mirror in sync with the Rust WindowManager.
- *
- * The listener is registered before hydrating from `window_list`. That avoids
- * missing an event emitted between application startup and page load.
+ * The listener is registered before hydrating from `window_list`, avoiding missed
+ * events emitted between application startup and page load.
  */
 export function useWindowEvents() {
   const hydrate = useWindowStore((state) => state.hydrate);

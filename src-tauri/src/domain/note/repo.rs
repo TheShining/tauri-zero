@@ -2,8 +2,8 @@ use super::model::Note;
 use crate::error::{AppError, AppResult};
 use sqlx::SqlitePool;
 
-/// 数据访问层：封装 notes 表的所有 SQL 操作。
-/// 不包含业务逻辑，只做 CRUD + 模型映射。
+/// 数据访问层，封装 notes 表的所有 SQL 操作；不包含业务逻辑，只做 CRUD 与模型映射。
+/// Data-access layer encapsulating all SQL operations for the notes table; it contains no business logic and only performs CRUD plus model mapping.
 pub struct NoteRepo;
 
 impl NoteRepo {

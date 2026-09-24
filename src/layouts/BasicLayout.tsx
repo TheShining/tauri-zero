@@ -29,10 +29,11 @@ export default function BasicLayout() {
     }
   }, [navigate, t]);
 
-  // Listen for events from the tray popup (backend emits these).
-  // The promise-then-cleanup pattern correctly handles the race where
-  // the component unmounts before listen() resolves: .then(fn => fn())
-  // defers the unlisten call until the promise settles, no leaks.
+  // 监听托盘弹窗事件（由后端发出）。promise-then-cleanup 模式可正确处理组件在 listen() resolve 前卸载的竞态：
+  // .then(fn => fn()) 会把 unlisten 调用推迟到 promise 完成后执行，避免泄漏。
+  // Listen for events from the tray popup (the backend emits these).
+  // The promise-then-cleanup pattern handles the race where the component unmounts before listen() resolves:
+  // .then(fn => fn()) defers the unlisten call until the promise settles, preventing leaks.
   useEffect(() => {
     const unlistenNav = listen<string>("tray://navigate", (event) => {
       void navigate(event.payload);

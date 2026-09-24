@@ -1,4 +1,7 @@
-/* ===== Tray popup global reset ===== */
+/*
+ * ===== 托盘弹窗全局重置 =====
+ * ===== Tray popup global reset =====
+ */
 
 * {
   margin: 0;
@@ -24,7 +27,10 @@ body {
   background: var(--tray-window-bg, #fff);
 }
 
-/* ===== Tray menu ===== */
+/*
+ * ===== 托盘菜单 =====
+ * ===== Tray menu =====
+ */
 
 .tray-menu {
   width: 200px;

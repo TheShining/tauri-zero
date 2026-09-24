@@ -19,28 +19,31 @@ export default function App() {
   const locale = useAppStore((s) => s.locale);
   const primaryColor = useAppStore((s) => s.primaryColor);
 
-  // Sync persisted close-to-tray setting to backend on startup
+  // 启动时把持久化的 close-to-tray 配置同步到后端。
+  // Sync the persisted close-to-tray setting to the backend on startup.
   useEffect(() => {
     void setCloseToTray(useAppStore.getState().closeToTray).catch((error) => {
       console.error("[App] sync close-to-tray failed:", error);
     });
   }, []);
 
-  // Keep the i18n instance in sync with the zustand locale.
-  // In the main window this is redundant (LocaleSwitch already calls
-  // changeLanguage), but in the tray popup the locale is updated via
-  // Tauri events — without this effect, i18n would never switch.
+  // 让 i18n 实例与 zustand locale 保持同步。主窗口中这与 LocaleSwitch 的 changeLanguage 重复，
+  // 但托盘弹窗通过 Tauri 事件更新 locale；没有此 effect，i18n 将无法切换。
+  // Keep the i18n instance in sync with the zustand locale. This is redundant in the main window
+  // (LocaleSwitch already calls changeLanguage), but the tray popup updates its locale through Tauri events;
+  // without this effect, i18n would never switch.
   useEffect(() => {
     void i18n.changeLanguage(locale);
   }, [locale]);
 
-  // 让原生控件（滚动条等）跟随明暗主题，避免暗色下出现白底滚动条
+  // 让原生控件（滚动条等）跟随明暗主题，避免暗色主题下出现白底滚动条。
+  // Keep native controls such as scrollbars aligned with the theme and avoid white scrollbars in dark mode.
   useEffect(() => {
     document.documentElement.style.colorScheme = theme;
   }, [theme]);
 
-  // Broadcast theme/locale changes so the tray popup (separate webview)
-  // can sync its own zustand store instance.
+  // 广播主题/语言变更，让托盘弹窗等独立 webview 同步各自的 zustand store 实例。
+  // Broadcast theme/locale changes so separate webviews such as the tray popup can sync their own zustand store instances.
   useEffect(() => {
     void emit("app://config-changed", { theme, locale });
   }, [theme, locale]);

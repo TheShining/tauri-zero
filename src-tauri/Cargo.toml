@@ -5,12 +5,12 @@ description = "A Tauri App"
 authors = ["you"]
 edition = "2021"
 
+# 更多键与定义见：https://doc.rust-lang.org/cargo/reference/manifest.html
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [lib]
-# The `_lib` suffix may seem redundant but it is necessary
-# to make the lib name unique and wouldn't conflict with the bin name.
-# This seems to be only an issue on Windows, see https://github.com/rust-lang/cargo/issues/8519
+# `_lib` 后缀看似冗余，但能让库名唯一且不与 bin 名称冲突；这似乎仅是 Windows 问题。
+# The `_lib` suffix may seem redundant but it is necessary to make the lib name unique and avoid conflicting with the bin name; this seems to be only an issue on Windows, see https://github.com/rust-lang/cargo/issues/8519
 name = "tauri_zero_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 

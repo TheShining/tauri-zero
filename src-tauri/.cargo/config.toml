@@ -1,5 +1,6 @@
 [build]
 # 统一 target 目录（与 src-tauri 同级便于清理）
+# Unify the target directory beside src-tauri for easy cleanup
 # target-dir = "../target"
 
 [env]

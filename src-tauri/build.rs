@@ -22,7 +22,8 @@ fn resolve_mode() -> String {
         }
     }
 
-    // `tauri dev` uses Cargo debug profile, while `tauri build` uses release.
+    // `tauri dev` 使用 Cargo debug profile，`tauri build` 使用 release。
+    // `tauri dev` uses the Cargo debug profile, while `tauri build` uses release.
     let profile = env::var("PROFILE").unwrap_or_else(|_| "debug".into());
 
     if profile == "release" {
@@ -45,8 +46,8 @@ fn load_env_vars(project_root: &Path, mode: &str) -> BTreeMap<String, String> {
     for file_name in env_files {
         let path = project_root.join(file_name);
 
-        // Track all candidate files, including missing local overrides, so a
-        // newly created file invalidates the build cache as well.
+        // 跟踪所有候选文件，包括尚不存在的本地覆盖文件，新文件创建后同样会使构建缓存失效。
+        // Track all candidate files, including missing local overrides, so a newly created file invalidates the build cache as well.
         println!("cargo:rerun-if-changed={}", path.display());
 
         if !path.exists() {
@@ -76,6 +77,7 @@ fn main() {
     vars.insert("APP_ENV".into(), mode.clone());
 
     for (key, value) in vars {
+        // 进程级变量覆盖 env 文件加载的值。
         // A process-level variable overrides the value loaded from env files.
         let value = env::var(&key).unwrap_or(value);
         println!("cargo:rustc-env={key}={value}");

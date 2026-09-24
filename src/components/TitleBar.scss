@@ -12,7 +12,8 @@
     opacity: 0.65;
   }
 
-  // macOS：左侧让位系统红绿灯（约 78px），自绘三键不渲染
+  // macOS 左侧让位系统红绿灯（约 78px），不渲染自绘三键。
+  // On macOS, reserve the left side for system traffic lights (about 78px) and do not render custom controls.
   &--macos {
     padding-left: 78px;
   }
@@ -67,7 +68,10 @@
     height: 100%;
   }
 
-  /* 压掉 App.css 遗留的全局 button 样式（阴影、白底、边框），保持标题栏扁平 */
+  /*
+   * 压掉 App.css 遗留的全局 button 样式（阴影、白底、边框），保持标题栏扁平。
+   * Override global button styles inherited from App.css (shadow, white background, border) to keep the title bar flat.
+   */
   .ant-btn {
     box-shadow: none;
     border: none;

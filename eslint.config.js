@@ -7,11 +7,13 @@ import prettier from "eslint-config-prettier";
 
 export default tseslint.config(
   // 全局忽略
+  // Global ignores
   {
     ignores: ["dist", "src-tauri", "node_modules", "pnpm-lock.yaml"],
   },
 
   // JS/TS 基线
+  // JavaScript/TypeScript baseline
   js.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
   {
@@ -24,6 +26,7 @@ export default tseslint.config(
   },
 
   // React 项目配置
+  // React project configuration
   {
     files: ["src/**/*.{ts,tsx}"],
     extends: [eslintReact.configs["recommended-typescript"]],
@@ -39,12 +42,14 @@ export default tseslint.config(
   },
 
   // 配置文件（非项目 TS）
+  // Configuration files (non-project TypeScript)
   {
     files: ["*.config.{ts,js,mjs}", "vite.config.ts", "eslint.config.js", "scripts/**/*.mjs"],
     ...tseslint.configs.disableTypeChecked,
   },
 
   // Node.js 脚本
+  // Node.js scripts
   {
     files: ["scripts/**/*.mjs"],
     languageOptions: {
@@ -56,5 +61,6 @@ export default tseslint.config(
   },
 
   // 关闭与 Prettier 冲突的格式化规则
+  // Disable formatting rules that conflict with Prettier
   prettier,
 );

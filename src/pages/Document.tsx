@@ -23,8 +23,9 @@ export default function Document() {
   const close = useWindowStore((state) => state.close);
   const forceClose = useWindowStore((state) => state.forceClose);
 
-  // The backend prevents closing a dirty window and asks this page to
-  // confirm instead. The confirm event is targeted at this window only.
+  // 后端会阻止有未保存内容窗口的关闭，并改为请求当前页面确认；确认事件只定向发送给当前窗口。
+  // The backend prevents closing a dirty window and asks this page to confirm instead.
+  // The confirm event is targeted at this window only.
   useEffect(() => {
     if (!isDocumentWindow) {
       return;

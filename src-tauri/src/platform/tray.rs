@@ -13,6 +13,7 @@ pub const TRAY_ID: &str = "main-tray";
 
 // ---------------------------------------------------------------------------
 // 托盘图标创建与事件处理
+// Tray icon creation and event handling
 // ---------------------------------------------------------------------------
 
 pub fn create_tray(app: &AppHandle<Wry>) -> tauri::Result<()> {
@@ -58,7 +59,8 @@ fn handle_tray_event(tray: &TrayIcon<Wry>, event: TrayIconEvent) {
     }
 }
 
-/// Compute popup window position, adjusting for screen boundaries.
+/// 计算托盘弹窗位置，并根据屏幕边界调整。
+/// Compute the popup window position and adjust for screen boundaries.
 fn compute_popup_position(
     app: &AppHandle<Wry>,
     cursor: PhysicalPosition<f64>,
@@ -92,6 +94,7 @@ fn compute_popup_position(
 
 // ---------------------------------------------------------------------------
 // 托盘相关 IPC 命令
+// Tray-related IPC commands
 // ---------------------------------------------------------------------------
 
 #[tauri::command]
@@ -100,6 +103,7 @@ pub fn set_close_to_tray(value: bool, state: tauri::State<'_, SharedConfigState>
     Ok(())
 }
 
+/// 托盘弹窗菜单触发的动作。
 /// Actions invoked from the tray popup menu.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -117,8 +121,8 @@ pub fn tray_action(
     app: AppHandle<Wry>,
     state: tauri::State<'_, SharedWindowManager>,
 ) -> AppResult<()> {
-    // Every menu action closes the popup first. A failure here must not
-    // block the action itself (especially Quit), so log instead of `?`.
+    // 所有菜单动作都会先关闭弹窗；此步骤失败不得阻断动作本身（尤其是 Quit），因此记录日志而不是使用 `?`。
+    // Every menu action closes the popup first. A failure here must not block the action itself (especially Quit), so log instead of using `?`.
     if let Err(error) = state.hide_tray_popup(&app) {
         log::warn!("[tray] failed to hide tray popup before action: {error}");
     }

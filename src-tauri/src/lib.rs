@@ -16,13 +16,14 @@ use tauri_plugin_log::{Target, TargetKind};
 pub fn run() {
     tauri::Builder::default()
         // --- 基础设施 ---
+        // --- infrastructure ---
         .plugin(
             tauri_plugin_log::Builder::new()
                 .targets([
                     Target::new(TargetKind::Stdout),
                     Target::new(TargetKind::LogDir {
-                        // Keep debug builds from competing with an installed
-                        // release instance for the same log file.
+                        // 避免 debug 构建与已安装的 release 实例争用同一个日志文件。
+                        // Keep debug builds from competing with an installed release instance for the same log file.
                         file_name: Some(if cfg!(debug_assertions) {
                             "tauri-zero-dev"
                         } else {
@@ -36,6 +37,7 @@ pub fn run() {
         )
         .plugin(tauri_plugin_http::init())
         // --- 系统能力 ---
+        // --- system capabilities ---
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_notification::init())
@@ -43,10 +45,12 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_os::init())
         // --- 自动更新 ---
+        // --- auto-update ---
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
         .setup(|app| {
-            // 1. 初始化数据库
+            // 1. 初始化数据库。
+            // Initialize the database.
             let app_data_dir = app.path().app_data_dir()?;
             std::fs::create_dir_all(&app_data_dir)?;
             let db_path = app_data_dir.join(db::db_filename());
@@ -56,19 +60,22 @@ pub fn run() {
             ))
             .map_err(|e| std::io::Error::other(e.to_string()))?;
 
-            // 2. 注册应用状态
+            // 2. 注册应用状态。
+            // Register application state.
             let window_manager = Arc::new(platform::window::WindowManager::new());
             app.manage(window_manager);
             app.manage(Arc::new(DbState::new(pool)));
             app.manage(Arc::new(ConfigState::new()));
             app.manage(Arc::new(CounterState::new()));
 
-            // 3. 注册静态窗口并初始化平台模块
+            // 3. 注册静态窗口并初始化平台模块。
+            // Register static windows and initialize platform modules.
             let window_manager = app.state::<SharedWindowManager>();
             window_manager
                 .initialize_existing(app.handle())
                 .map_err(|e| std::io::Error::other(e.to_string()))?;
-            // 主窗口在 tauri.conf.json 静态声明，同样移除 Win11 DWM 的 1px 灰边
+            // 主窗口在 tauri.conf.json 静态声明，同样移除 Win11 DWM 的 1px 灰边。
+            // The main window is statically declared in tauri.conf.json; also remove the 1px Win11 DWM gray border.
             if let Some(main_window) = app.get_webview_window(platform::window::MAIN_WINDOW_LABEL) {
                 platform::dwm::polish_borderless_window(&main_window);
             }

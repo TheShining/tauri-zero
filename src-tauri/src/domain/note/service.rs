@@ -3,8 +3,8 @@ use super::repo::NoteRepo;
 use crate::error::{AppError, AppResult};
 use sqlx::SqlitePool;
 
-/// 业务逻辑层：参数校验 + 业务规则 + 调用 repository。
-/// Command 层只做 IPC 参数提取，业务逻辑全部在此。
+/// 业务逻辑层，负责参数校验、业务规则和调用 repository；Command 层只做 IPC 参数提取，业务逻辑全部在此。
+/// Business-logic layer for parameter validation, business rules, and repository calls; the command layer only extracts IPC parameters, while all business logic lives here.
 pub struct NoteService;
 
 impl NoteService {

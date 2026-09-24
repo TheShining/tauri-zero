@@ -41,6 +41,7 @@ impl Serialize for AppError {
 pub type AppResult<T> = Result<T, AppError>;
 
 /// 自动转换 sqlx::Error -> AppError，减少 .map_err() 样板。
+/// Automatically converts sqlx::Error into AppError to reduce .map_err() boilerplate.
 impl From<sqlx::Error> for AppError {
     fn from(e: sqlx::Error) -> Self {
         match e {

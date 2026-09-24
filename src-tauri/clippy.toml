@@ -1,3 +1,4 @@
-# Clippy 配置：允许的字段复杂度等
+# Clippy 配置，允许指定字段复杂度等。
 # 文档: https://rust-lang.github.io/clippy/master/index.html
+# Documentation: https://rust-lang.github.io/clippy/master/index.html
 msrv = "1.77"

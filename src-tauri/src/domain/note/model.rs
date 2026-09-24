@@ -1,7 +1,7 @@
 use serde::Serialize;
 
-/// 领域模型：对应数据库 notes 表的一行。
-/// 同时实现 Serialize（用于 IPC 返回）和 sqlx::FromRow（用于查询映射）。
+/// 领域模型，对应数据库 notes 表的一行；同时实现 Serialize（IPC 返回）与 sqlx::FromRow（查询映射）。
+/// Domain model representing one row in the notes table; also implements Serialize for IPC responses and sqlx::FromRow for query mapping.
 #[derive(Debug, Clone, Serialize, sqlx::FromRow)]
 pub struct Note {
     pub id: i64,

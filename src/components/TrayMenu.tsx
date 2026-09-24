@@ -5,7 +5,9 @@ import type { CSSProperties } from "react";
 import "./TrayMenu.css";
 
 /**
- * Tray menu actions.  Must match the Rust `TrayAction` enum
+ * 托盘菜单动作，必须与 commands/tray.rs 中 Rust `TrayAction`
+ * 枚举（`#[serde(rename_all = "snake_case")]`）保持一致。
+ * Tray menu actions. They must match the Rust `TrayAction` enum
  * (`#[serde(rename_all = "snake_case")]`) in commands/tray.rs.
  */
 export default function TrayMenu() {

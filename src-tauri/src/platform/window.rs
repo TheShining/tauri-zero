@@ -23,8 +23,8 @@ const CONTEXT_ID_MAX_LEN: usize = 128;
 pub type SharedWindowManager = Arc<WindowManager>;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-// The wire format is kebab-case for every variant, consistent with the
-// window labels ("tray-popup" comes from tauri.conf.json).
+// 所有变体在传输格式中均使用 kebab-case，与窗口标签保持一致（“tray-popup” 来自 tauri.conf.json）。
+// Every variant uses kebab-case on the wire, consistent with window labels ("tray-popup" comes from tauri.conf.json).
 #[serde(rename_all = "kebab-case")]
 pub enum WindowKind {
     Main,
@@ -33,20 +33,24 @@ pub enum WindowKind {
     Document,
 }
 
+/// 窗口类型的静态描述。
 /// Static description of a window kind.
 #[derive(Debug, Clone, Copy)]
 struct WindowSpec {
     kind: WindowKind,
+    /// 固定 label；当 `requires_context` 为真时表示 label 前缀。
     /// Fixed label, or the label prefix when `requires_context` is set.
     label: &'static str,
     requires_context: bool,
-    /// `None` for windows statically declared in tauri.conf.json (main,
-    /// tray-popup): those are only registered here and can never be created
-    /// dynamically, so tauri.conf.json remains their single source of truth
-    /// for title/size/route.
+    /// tauri.conf.json 静态声明的窗口（main、tray-popup）使用 `None`；这些窗口只在此注册，不能动态创建，
+    /// 因此 tauri.conf.json 仍是标题、尺寸和路由的唯一事实来源。
+    /// `None` for windows statically declared in tauri.conf.json (main and tray-popup);
+    /// those windows are only registered here and can never be created dynamically, so tauri.conf.json
+    /// remains the single source of truth for title, size, and route.
     creation: Option<WindowCreation>,
 }
 
+/// 动态创建窗口时使用的参数。
 /// Parameters used when dynamically creating a window.
 #[derive(Debug, Clone, Copy)]
 struct WindowCreation {
@@ -129,10 +133,11 @@ impl WindowInstance {
 
 #[derive(Default)]
 pub struct WindowManager {
-    /// Lock ordering: `creation_lock` may be held while acquiring `windows`,
-    /// never the other way around. Window creation blocks on the main event
-    /// loop, which can itself handle events that need `windows`; reversing
-    /// this order can deadlock.
+    /// 加锁顺序：可以持有 `creation_lock` 后再获取 `windows`，绝不能反向；窗口创建会阻塞主事件循环，
+    /// 而主事件循环又可能处理需要 `windows` 的事件，反向加锁会死锁。
+    /// Lock ordering: `creation_lock` may be held while acquiring `windows`, never the other way around.
+    /// Window creation blocks on the main event loop, which can itself handle events needing `windows`;
+    /// reversing this order can deadlock.
     windows: RwLock<HashMap<String, WindowInstance>>,
     creation_lock: Mutex<()>,
 }
@@ -142,6 +147,7 @@ impl WindowManager {
         Self::default()
     }
 
+    /// 注册 tauri.conf.json 静态创建的窗口。
     /// Register windows that were statically created from tauri.conf.json.
     pub fn initialize_existing(&self, app: &AppHandle<Wry>) -> AppResult<()> {
         for kind in [WindowKind::Main, WindowKind::TrayPopup] {
@@ -164,8 +170,8 @@ impl WindowManager {
         let context_id = normalize_context_id(spec, request.context_id)?;
         let label = derive_label(spec, context_id.as_deref())?;
 
-        // Serialize the check-then-create critical section. This prevents
-        // duplicate windows when the same command is invoked twice quickly.
+        // 串行化“检查后创建”临界区，防止同一命令快速触发两次时创建重复窗口；广播在释放守卫后执行。
+        // Serialize the check-then-create critical section. This prevents duplicate windows when the same command is invoked twice quickly.
         // Broadcasting happens after the guard is released.
         let created = {
             let _guard = self
@@ -175,8 +181,8 @@ impl WindowManager {
 
             match app.get_webview_window(&label) {
                 Some(window) => {
-                    // Self-heal: the webview lives in Tauri but is missing
-                    // from the registry (e.g. a lifecycle event race).
+                    // 自愈：webview 存在于 Tauri 但注册表缺失（例如生命周期事件竞态）时重新注册，而不是在聚焦时报错。
+                    // Self-heal: the webview lives in Tauri but is missing from the registry (e.g. a lifecycle event race).
                     // Re-register instead of erroring out on focus.
                     if self.registered_kind(&label).is_err() {
                         self.register_existing_window(&window, spec, context_id)?;
@@ -195,11 +201,14 @@ impl WindowManager {
                     .title(creation.title)
                     .inner_size(creation.width, creation.height)
                     .resizable(creation.resizable)
-                    // 无边框：标题栏由前端 TitleBar 组件自绘
+                    // 无边框：标题栏由前端 TitleBar 组件自绘。
+                    // Frameless mode: the frontend TitleBar component draws the title bar.
                     .decorations(false)
-                    // 关闭 DWM 假阴影：Windows 10 上会残留 1px 灰边 + 放大窗口尺寸
+                    // 关闭 DWM 假阴影：Windows 10 上会残留 1px 灰边并放大窗口尺寸。
+                    // Disable the DWM fake shadow; on Windows 10 it leaves a 1px gray border and enlarges the window.
                     .shadow(false);
-                    // macOS: 保留原生红绿灯按钮（Overlay 风格），Windows/Linux 忽略
+                    // macOS 保留原生红绿灯按钮（Overlay 风格），Windows/Linux 忽略。
+                    // macOS keeps the native traffic-light buttons (Overlay style); Windows/Linux ignore this.
                     #[cfg(target_os = "macos")]
                     let window = window
                         .title_bar_style(tauri::utils::TitleBarStyle::Overlay)
@@ -207,7 +216,8 @@ impl WindowManager {
                     let window = window
                         .build()
                         .map_err(|error| window_error("create window", error))?;
-                    // Windows 11 DWM 默认给无边框窗口画 1px 灰边，移除之
+                    // Windows 11 DWM 默认给无边框窗口绘制 1px 灰边，这里将其移除。
+                    // Windows 11 DWM draws a default 1px gray border on frameless windows; remove it here.
                     dwm::polish_borderless_window(&window);
 
                     self.register_existing_window(&window, spec, context_id)?;
@@ -278,8 +288,8 @@ impl WindowManager {
             .map_err(|error| window_error("close window", error))
     }
 
-    /// Close regardless of the dirty flag: clears `dirty` so the
-    /// CloseRequested interceptor lets the close through.
+    /// 无论 dirty 标志如何都关闭窗口；清除 `dirty` 让 CloseRequested 拦截器放行关闭。
+    /// Close regardless of the dirty flag: clears `dirty` so the CloseRequested interceptor lets the close through.
     pub fn force_close(&self, app: &AppHandle<Wry>, label: &str) -> AppResult<()> {
         self.ensure_closable(label)?;
         self.update_instance(label, |instance| {
@@ -357,8 +367,8 @@ impl WindowManager {
             WindowEvent::Focused(focused) => {
                 let label = window.label();
 
-                // The tray popup is a transient window. Keep the old behavior
-                // of hiding it whenever it loses focus.
+                // 托盘弹窗是瞬态窗口，保持失焦即隐藏的既有行为。
+                // The tray popup is a transient window; keep the existing behavior of hiding it whenever it loses focus.
                 if !*focused && label == TRAY_POPUP_WINDOW_LABEL {
                     if let Err(error) = self.hide(app, label) {
                         log::error!("[window] failed to hide tray popup on blur: {error}");
@@ -433,9 +443,10 @@ impl WindowManager {
         }
     }
 
-    /// Dirty windows do not close silently: the close is prevented, the
-    /// window comes to the front, and its own page is asked to confirm via
-    /// `window://confirm-close`. The page confirms with window_force_close.
+    /// 有未保存内容的窗口不会静默关闭：先阻止关闭、把窗口置前，再通过 `window://confirm-close` 请求对应页面确认；
+    /// 页面最终调用 window_force_close 确认关闭。
+    /// Dirty windows do not close silently: the close is prevented, the window comes to the front,
+    /// and its own page is asked to confirm via `window://confirm-close`. The page confirms with window_force_close.
     fn handle_dirty_close_requested(
         &self,
         app: &AppHandle<Wry>,
@@ -465,9 +476,10 @@ impl WindowManager {
         spec: WindowSpec,
         context_id: Option<String>,
     ) -> AppResult<()> {
-        // Reading visibility/focus can fail transiently for a window that is
-        // mid-creation; a wrong initial flag self-corrects via events, while
-        // aborting registration would desync the registry permanently.
+        // 窗口创建过程中读取可见性或焦点可能短暂失败；错误的初始标志可通过事件自行修正，
+        // 而中止注册会让注册表永久失配。
+        // Reading visibility/focus can fail transiently for a window that is mid-creation;
+        // a wrong initial flag self-corrects via events, while aborting registration would desync the registry permanently.
         let visible = window.is_visible().unwrap_or_else(|error| {
             log::warn!(
                 "[window] failed to read visibility of {}: {error}",
@@ -526,10 +538,10 @@ impl WindowManager {
         Ok(())
     }
 
-    /// Mark `label` visible and focused. Focus is exclusive: every other
-    /// window is marked unfocused, because OS focus events are not always
-    /// delivered reliably and leaving stale `focused` flags corrupts the
-    /// snapshot indefinitely.
+    /// 将 `label` 标记为可见且已聚焦；焦点互斥，其余窗口全部标记为未聚焦。OS 焦点事件并非总可靠送达，
+    /// 残留过期的 `focused` 标志会长期污染快照。
+    /// Mark `label` visible and focused. Focus is exclusive: every other window is marked unfocused because
+    /// OS focus events are not always delivered reliably and stale `focused` flags corrupt the snapshot indefinitely.
     fn mark_shown_and_focused(&self, label: &str) -> AppResult<()> {
         self.set_exclusive_focus(label, true)
     }
@@ -587,9 +599,10 @@ impl WindowManager {
             .map_err(|error| window_error("broadcast window state", error))
     }
 
-    /// Command-path broadcasts log instead of failing the command: the state
-    /// change already happened, so reporting an emit failure as a command
-    /// error would mislead the frontend into retrying a completed action.
+    /// 命令路径中的广播只记录日志而不是让命令失败；状态变更已经完成，把 emit 失败上报为命令错误
+    /// 会误导前端重试已完成的动作。
+    /// Command-path broadcasts log instead of failing the command: the state change already happened,
+    /// so reporting an emit failure as a command error would mislead the frontend into retrying a completed action.
     fn broadcast_lossy(&self, app: &AppHandle<Wry>) {
         if let Err(error) = self.broadcast(app) {
             log::error!("[window] failed to broadcast window state: {error}");
@@ -787,6 +800,7 @@ mod tests {
             serde_json::from_str::<WindowKind>("\"tray-popup\"").unwrap(),
             WindowKind::TrayPopup
         );
+        // 所有变体使用 kebab-case，传输格式中不允许残留 snake_case。
         // Every variant uses kebab-case; no stray snake_case on the wire.
         for (kind, wire) in [
             (WindowKind::Main, "main"),

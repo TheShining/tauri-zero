@@ -20,14 +20,14 @@ export function createAppRouter() {
       ],
     },
     {
-      // Tray popup is a standalone top-level route (no BasicLayout)
-      // rendered in its own frameless Tauri window.
+      // 托盘弹窗是独立顶级路由（不使用 BasicLayout），渲染在专用无边框 Tauri 窗口中。
+      // Tray popup is a standalone top-level route (no BasicLayout) rendered in its own frameless Tauri window.
       path: "/tray-popup",
       element: <TrayPopup />,
     },
     {
-      // Document windows are created by WindowManager and render as
-      // standalone top-level windows.
+      // 文档窗口由 WindowManager 创建，并作为独立顶级窗口渲染。
+      // Document windows are created by WindowManager and render as standalone top-level windows.
       path: "/documents/:contextId",
       element: <Document />,
     },
