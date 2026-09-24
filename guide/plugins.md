@@ -1,6 +1,6 @@
 # 系统能力
 
-tauri-zero 已集成常用 Tauri 官方插件。IPC 相关能力封装在 `src/api/ipc/modules/`，插件工具函数保留在 `src/utils/`。
+tauri-zero 已集成常用 Tauri 官方插件。IPC 相关能力封装在 `src/api/ipc/modules/`，官方插件统一封装在 `src/api/plugins/`；业务代码禁止直接 import `@tauri-apps/plugin-*`（eslint `no-restricted-imports` 已固化，`src/api/` 豁免）。
 
 ## 文件系统
 
@@ -19,7 +19,7 @@ const exists = await fileExists("/absolute/path/file.txt");
 ## 对话框
 
 ```ts
-import { pickFile, pickSavePath } from "../utils/system";
+import { pickFile, pickSavePath } from "../api/plugins/dialog";
 
 const file = await pickFile();
 const savePath = await pickSavePath("default.txt");
@@ -28,7 +28,7 @@ const savePath = await pickSavePath("default.txt");
 ## 通知
 
 ```ts
-import { notify } from "../utils/system";
+import { notify } from "../api/plugins/notification";
 
 await notify("标题", "内容");
 ```
@@ -36,7 +36,7 @@ await notify("标题", "内容");
 ## 剪贴板
 
 ```ts
-import { copyText, readClipboard } from "../utils/system";
+import { copyText, readClipboard } from "../api/plugins/clipboard";
 
 await copyText("复制内容");
 const text = await readClipboard();
@@ -45,14 +45,14 @@ const text = await readClipboard();
 ## 打开外部链接 / Shell
 
 ```ts
-import { openExternal } from "../utils/system";
+import { openExternal } from "../api/plugins/shell";
 
 await openExternal("https://example.com");
 ```
 
 ## 自动更新
 
-使用 `tauri-plugin-updater`，前端封装在 `src/hooks/useUpdater.ts` 与 `src/components/UpdateChecker.tsx`。
+使用 `tauri-plugin-updater`，分三层：插件封装 `src/api/plugins/updater.ts`，状态编排 hook `src/hooks/useUpdater.ts`，设置页 UI `src/pages/settings/UpdateChecker.tsx`。
 
 ```tsx
 import { useUpdater } from "../hooks/useUpdater";

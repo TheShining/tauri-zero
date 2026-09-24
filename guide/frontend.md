@@ -11,11 +11,11 @@ import { createHashRouter } from "react-router";
 import { lazy } from "react";
 import BasicLayout from "../layouts/BasicLayout";
 
-const Home = lazy(() => import("../pages/Home"));
-const Settings = lazy(() => import("../pages/Settings"));
-const NotFound = lazy(() => import("../pages/NotFound"));
-const TrayPopup = lazy(() => import("../pages/TrayPopup"));
-const Document = lazy(() => import("../pages/Document"));
+const Home = lazy(() => import("../pages/main/Home"));
+const Settings = lazy(() => import("../pages/settings/Settings"));
+const NotFound = lazy(() => import("../pages/shared/NotFound"));
+const TrayPopup = lazy(() => import("../pages/tray-popup/TrayPopup"));
+const Document = lazy(() => import("../pages/document/Document"));
 
 export function createAppRouter() {
   return createHashRouter([
@@ -42,7 +42,7 @@ export function createAppRouter() {
 
 ### 新增页面
 
-1. 在 `src/pages/` 下创建页面组件。
+1. 在 `src/pages/<窗口kind>/` 下创建页面组件——`pages` 顶级目录按窗口分组（`main` / `settings` / `document` / `tray-popup`），通用页面放 `shared/`。
 2. 在 `createAppRouter.tsx` 中 `lazy` 引入并注册路由。
 3. 页面默认懒加载，`Suspense` 已在 `src/router/index.tsx` 中包裹。
 
@@ -163,8 +163,8 @@ try {
 
 - `useTauriEvent`：订阅全局 Tauri 事件的统一入口（详见 [前后端通信](./communication.md#tauri-事件)）。
 - `useConfigSync`：把 `app://config-changed` 广播的 theme/locale 应用到当前 webview 的 zustand 实例。
-- `useWindowEvents`：先注册 `window://changed` 监听、再从 `window_list` 水合窗口镜像（有意不用 useTauriEvent，需要顺序保证）。
-- `useUpdater`：封装 `plugin-updater` 的 check / downloadAndInstall / relaunch 流程。
+- `useWindowEvents`（`src/windows/useWindowEvents.ts`）：先注册 `window://changed` 监听、再从 `window_list` 水合窗口镜像（有意不用 useTauriEvent，需要顺序保证）。窗口领域的镜像 store（`windows/store.ts`）、label 常量（`windows/constants.ts`）与 `WindowList` 组件也一并收拢在 `src/windows/`。
+- `useUpdater`：封装自动更新的 check / downloadAndInstall / relaunch 流程（插件调用经由 `src/api/plugins/updater.ts`）。
 
 ## 国际化
 
@@ -198,16 +198,16 @@ setLocale("en-US");
 
 ## 通用组件
 
-- `ErrorBoundary`：全局错误边界，捕获渲染错误并展示兜底页（文案走 `i18n.t`）。
-- `AppFeedback`：统一消息/通知入口（`feedback.success/error/info/notify`）。
-- `TitleBar`：无边框标题栏（拖拽/导航/主题与语言切换）；窗口三键拆在 `WindowControls.tsx`，
+- `ErrorBoundary`（`src/app/`）：全局错误边界，捕获渲染错误并展示兜底页（文案走 `i18n.t`）。
+- `feedback`（`src/utils/feedback.ts`）：统一消息/通知入口（`feedback.success/error/info/notify`）。放在 utils 层而非 components，api/stores 等下层模块也能使用，保证依赖方向单向。
+- `TitleBar`（`src/layouts/titlebar/`）：无边框标题栏（拖拽/导航/主题与语言切换）；窗口三键在同目录 `WindowControls.tsx`，
   SVG 图标在 `TitleBarIcons.tsx`。
 - `ThemeToggle`：明暗主题切换。
 - `LocaleSwitch`：中英切换。
-- `UpdateChecker`：检查更新 UI；检查入口统一走 `useUpdater` hook。
+- `UpdateChecker`（`src/pages/settings/`）：检查更新 UI（settings 页面私有组件）；检查入口统一走 `useUpdater` hook。
 
 ```tsx
-import { feedback } from "../components/AppFeedback";
+import { feedback } from "../utils/feedback";
 
 feedback.success("操作成功");
 feedback.error("操作失败");

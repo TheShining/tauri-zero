@@ -23,14 +23,17 @@ src/                    # 前端源码
   api/
     http/               # 外部网络请求：request / client / interceptors
     ipc/                # 本地 Tauri IPC：client / modules / AppIpcError
-  components/           # 通用组件
+    plugins/            # 官方 Tauri 插件统一封装（业务代码不可直接 import 插件）
+  app/                  # 应用壳：ErrorBoundary / WindowReveal / i18n 实例
+  components/           # 通用组件（ThemeToggle / LocaleSwitch）
   hooks/                # 自定义 hooks
-  layouts/              # 布局
+  layouts/              # 布局（BasicLayout + titlebar/ 窗口框架）
   locales/              # i18n 文案
-  pages/                # 路由页面
+  pages/                # 路由页面，顶级目录按窗口分组 + shared/
   router/               # 路由配置
-  stores/               # zustand 状态
-  utils/                # 工具函数
+  stores/               # zustand 状态（useAppStore / useUserStore）
+  utils/                # 工具函数（feedback 等）
+  windows/              # 窗口领域：镜像 store / 同步 hook / label 常量 / WindowList
 
 src-tauri/              # Rust 端
   migrations/           # SQLite schema 迁移

@@ -94,7 +94,7 @@ pub fn tray_action(action: TrayAction, app: AppHandle<Wry>) {
 
 ### 2. 前端：新增菜单项
 
-`src/components/TrayMenu.tsx`：
+`src/pages/tray-popup/TrayMenu.tsx`：
 
 ```tsx
 import { trayAction, type TrayAction } from "../api/ipc/modules/tray";
@@ -143,7 +143,7 @@ tray: {
 | `src-tauri/src/platform/tray.rs` | 托盘图标创建 + 点击事件 |
 | `src-tauri/src/platform/tray.rs` | 托盘动作命令 |
 | `src/api/ipc/modules/tray.ts` | 托盘 IPC API 与动作类型
-| `src/components/TrayMenu.tsx` | 托盘菜单组件 |
-| `src/components/TrayMenu.css` | 菜单样式 |
-| `src/pages/TrayPopup.tsx` | 弹窗页面（同步、尺寸适配） |
+| `src/pages/tray-popup/TrayMenu.tsx` | 托盘菜单组件 |
+| `src/pages/tray-popup/TrayMenu.css` | 菜单样式 |
+| `src/pages/tray-popup/TrayPopup.tsx` | 弹窗页面（同步、尺寸适配） |
 | `src/router/createAppRouter.tsx` | `/tray-popup` 路由 |
