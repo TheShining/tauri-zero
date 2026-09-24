@@ -4,9 +4,11 @@ import { theme as antdTheme } from "antd";
 import { useEffect, useState, type MouseEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
+import { emitTo } from "@tauri-apps/api/event";
 import ThemeToggle from "./ThemeToggle";
 import LocaleSwitch from "./LocaleSwitch";
 import { useWindowStore } from "../stores/useWindowStore";
+import { MAIN_WINDOW_LABEL } from "../api/ipc/modules/window";
 import "./TitleBar.scss";
 
 const appTitle = import.meta.env.APP_PUBLIC_APP_TITLE ?? "tauri-zero";
@@ -75,6 +77,24 @@ export default function TitleBar() {
   const dirty = snapshot?.dirty ?? false;
   const contextId = snapshot?.contextId;
 
+  const isMain = label === MAIN_WINDOW_LABEL;
+  const focus = useWindowStore((state) => state.focus);
+
+  // 子窗口里的导航转发给主窗口执行（复用托盘已有的 tray://navigate 事件，
+  // 定向发给 main，子窗口自己的 BasicLayout 不会收到），再把主窗口唤起聚焦。
+  const handleNavClick = (to: string) => (event: MouseEvent<HTMLAnchorElement>) => {
+    if (isMain) return;
+    event.preventDefault();
+    void emitTo(MAIN_WINDOW_LABEL, "tray://navigate", to).catch((error) => {
+      console.error("[TitleBar] forward navigation failed:", error);
+    });
+    void focus(MAIN_WINDOW_LABEL).catch((error) => {
+      console.error("[TitleBar] focus main window failed:", error);
+    });
+  };
+  // 无边框后原生标题不可见；settings/document 窗口用语义标题/上下文顶替。
+  const titleSuffix = contextId ?? (label === "settings" ? t("common.settings") : null);
+
   useEffect(() => {
     if (!appWindow) return;
     let mounted = true;
@@ -115,19 +135,25 @@ export default function TitleBar() {
       <div className="titlebar__brand" onMouseDown={handleRegionMouseDown}>
         <span className="titlebar__title" style={{ color: token.colorText }}>
           {appTitle}
-          {contextId ? ` - ${contextId}` : ""}
+          {titleSuffix ? ` - ${titleSuffix}` : ""}
           {dirty ? <span className="titlebar__dirty-dot" aria-hidden="true" /> : null}
         </span>
       </div>
 
       <nav className="titlebar__nav">
-        <Link to="/" className="titlebar__nav-link" style={{ color: token.colorTextSecondary }}>
+        <Link
+          to="/"
+          className="titlebar__nav-link"
+          style={{ color: token.colorTextSecondary }}
+          onClick={handleNavClick("/")}
+        >
           {t("common.home")}
         </Link>
         <Link
           to="/settings"
           className="titlebar__nav-link"
           style={{ color: token.colorTextSecondary }}
+          onClick={handleNavClick("/settings")}
         >
           {t("common.settings")}
         </Link>

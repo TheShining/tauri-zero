@@ -8,10 +8,12 @@ import i18n from "./i18n";
 import AppRouter from "./router";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { useAppStore } from "./stores/useAppStore";
+import { useConfigSync } from "./hooks/useConfigSync";
 import { useWindowEvents } from "./hooks/useWindowEvents";
 
 export default function App() {
   useWindowEvents();
+  useConfigSync();
 
   const theme = useAppStore((s) => s.theme);
   const locale = useAppStore((s) => s.locale);

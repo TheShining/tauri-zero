@@ -1,6 +1,5 @@
 import { useEffect } from "react";
 import { theme as antdTheme } from "antd";
-import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { LogicalSize } from "@tauri-apps/api/dpi";
@@ -15,25 +14,6 @@ import { useAppStore } from "../stores/useAppStore";
 export default function TrayPopup() {
   const { token } = antdTheme.useToken();
   const theme = useAppStore((s) => s.theme);
-
-  // Sync theme/locale from the main window via Tauri events.
-  // The popup is a separate webview with its own zustand store
-  // instance; persisted localStorage gives correct initial state,
-  // and this listener handles runtime changes while the popup
-  // webview is active.
-  useEffect(() => {
-    const unlisten = listen<{ theme: string; locale: string }>("app://config-changed", (event) => {
-      const { theme: newTheme, locale: newLocale } = event.payload;
-      useAppStore.setState({
-        theme: newTheme as "light" | "dark",
-        locale: newLocale as "zh-CN" | "en-US",
-      });
-    });
-
-    return () => {
-      void unlisten.then((fn) => fn());
-    };
-  }, []);
 
   // Rehydrate from localStorage when the popup gains focus.
   // The popup webview may be suspended while hidden, missing

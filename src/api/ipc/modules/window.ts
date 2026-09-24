@@ -1,5 +1,6 @@
 import { ipcInvoke } from "../client";
 
+export const MAIN_WINDOW_LABEL = "main";
 export const WINDOW_CHANGED_EVENT = "window://changed";
 export const WINDOW_CONFIRM_CLOSE_EVENT = "window://confirm-close";
 
