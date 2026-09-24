@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.6.0](https://github.com/TheShining/tauri-zero/compare/v0.5.0...v0.6.0) (2026-09-24)
+
+
+### Features
+
+* **http:** 补完请求层错误链与取消信号合并 / complete HTTP error chain and abort-signal merging ([a711242](https://github.com/TheShining/tauri-zero/commit/a7112426638a5077605d819f3c81cc6e34b15f54))
+
+
+### Bug Fixes
+
+* **router:** router 提升为模块级单例 / hoist router to a module-level singleton ([b491528](https://github.com/TheShining/tauri-zero/commit/b491528da4823808bf8027c6db08853684709e0c))
+* **store:** token 不再持久化 / stop persisting token in localStorage ([d8e5dfd](https://github.com/TheShining/tauri-zero/commit/d8e5dfdd27d15afc455f84e83682d357f25092cc))
+
 ## [0.5.0](https://github.com/TheShining/tauri-zero/compare/v0.4.0...v0.5.0) (2026-09-24)
 
 
