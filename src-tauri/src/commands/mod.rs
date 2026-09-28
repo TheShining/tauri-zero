@@ -17,6 +17,7 @@ macro_rules! all_handlers {
             // --- notes 领域命令 ---
             // --- domain::note ---
             domain::note::command::list_notes,
+            domain::note::command::get_note,
             domain::note::command::create_note,
             domain::note::command::update_note,
             domain::note::command::delete_note,

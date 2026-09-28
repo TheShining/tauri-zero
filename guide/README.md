@@ -12,6 +12,7 @@ tauri-zero is a zero-config Tauri 2 + React 19 desktop app starter. These guides
 - [Rust 端开发](./rust.md) — domain/platform 结构、命令注册、错误处理、状态、SQLite 迁移
 - [系统能力](./plugins.md) — 文件系统、对话框、通知、剪贴板、Shell、自动更新
 - [系统托盘](./system-tray.md) — 托盘菜单、关闭最小化、主题/语言同步
+- [从 demo 到自己的业务](./customize.md) — demo 便签应用的范围说明与替换步骤
 - [环境变量](./env.md) — 前后端共享多环境配置与类型化 `import.meta.env`
 - [测试](./testing.md) — 前端 Vitest 与 Rust 测试
 - [CI/CD 与发布](./ci-cd.md) — 质量门禁、自动发版、自动更新分发
@@ -25,11 +26,11 @@ src/                    # 前端源码
     ipc/                # 本地 Tauri IPC：client / modules / AppIpcError
     plugins/            # 官方 Tauri 插件统一封装（业务代码不可直接 import 插件）
   app/                  # 应用壳：ErrorBoundary / WindowReveal / i18n 实例
-  components/           # 通用组件（ThemeToggle / LocaleSwitch）
+  components/           # 通用组件（ThemeToggle / SettingsButton / icons）
   hooks/                # 自定义 hooks
   layouts/              # 布局（BasicLayout + titlebar/ 窗口框架）
   locales/              # i18n 文案
-  pages/                # 路由页面，顶级目录按窗口分组 + shared/
+  pages/                # 路由页面，按窗口分组（notes 列表/编辑器、settings、tray-popup）+ shared/
   router/               # 路由配置
   stores/               # zustand 状态（useAppStore / useUserStore / useWindowStore）
   utils/                # 工具函数（feedback 等）

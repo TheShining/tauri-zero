@@ -110,6 +110,7 @@ pub fn set_close_to_tray(value: bool, state: tauri::State<'_, SharedConfigState>
 pub enum TrayAction {
     Show,
     Hide,
+    NewNote,
     Settings,
     CheckUpdate,
     Quit,
@@ -130,6 +131,14 @@ pub fn tray_action(
     match action {
         TrayAction::Show => state.focus(&app, MAIN_WINDOW_LABEL)?,
         TrayAction::Hide => state.hide(&app, MAIN_WINDOW_LABEL)?,
+        TrayAction::NewNote => {
+            // 笔记默认标题依赖前端 i18n，因此这里只唤起主窗口并发事件，创建动作由前端完成（与 CheckUpdate 同模式）。
+            // The default note title depends on frontend i18n, so here we only reveal the main window and
+            // emit an event; the frontend performs the creation (same pattern as CheckUpdate).
+            state.focus(&app, MAIN_WINDOW_LABEL)?;
+            app.emit_to(MAIN_WINDOW_LABEL, "tray://new-note", ())
+                .map_err(|error| crate::error::AppError::Internal(format!("{error}")))?;
+        }
         TrayAction::Settings => {
             state.open(
                 &app,

@@ -1,0 +1,58 @@
+/* 设置窗口布局：左侧竖排菜单 + 右侧分组行，风格对齐主流桌面应用（微信/Telegram 设置页形态）。 */
+
+/* Settings window layout: a left vertical menu plus right grouped rows, matching the form
+   factor of mainstream desktop settings pages (WeChat/Telegram style). */
+.settings-menu {
+  width: 180px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 8px;
+  border-right: 1px solid transparent;
+}
+
+.settings-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.2s ease;
+
+  &:not(&--active):hover {
+    background-color: var(--ant-color-fill-tertiary);
+  }
+}
+
+.settings-content {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+  padding: 20px 28px 28px;
+}
+
+.settings-group {
+  margin-bottom: 28px;
+}
+
+.settings-group-title {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 14px;
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 0;
+
+  &:not(:last-child) {
+    border-bottom: 1px solid var(--ant-color-border-secondary);
+  }
+}

@@ -43,11 +43,11 @@ export default function App() {
     document.documentElement.style.colorScheme = theme;
   }, [theme]);
 
-  // 广播主题/语言变更，让托盘弹窗等独立 webview 同步各自的 zustand store 实例。
-  // Broadcast theme/locale changes so separate webviews such as the tray popup can sync their own zustand store instances.
+  // 广播主题/语言/主题色变更，让托盘弹窗等独立 webview 同步各自的 zustand store 实例。
+  // Broadcast theme/locale/primary-color changes so separate webviews such as the tray popup can sync their own zustand store instances.
   useEffect(() => {
-    void emit(APP_EVENTS.configChanged, { theme, locale });
-  }, [theme, locale]);
+    void emit(APP_EVENTS.configChanged, { theme, locale, primaryColor });
+  }, [theme, locale, primaryColor]);
 
   return (
     <ConfigProvider

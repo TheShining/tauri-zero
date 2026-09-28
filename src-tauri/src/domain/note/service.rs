@@ -12,6 +12,10 @@ impl NoteService {
         NoteRepo::list(db).await
     }
 
+    pub async fn get(db: &SqlitePool, id: i64) -> AppResult<Note> {
+        NoteRepo::find_by_id(db, id).await
+    }
+
     pub async fn create(db: &SqlitePool, title: String, content: String) -> AppResult<Note> {
         if title.trim().is_empty() {
             return Err(AppError::InvalidInput("title is empty".into()));

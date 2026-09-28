@@ -6,8 +6,7 @@
 [![CI](https://github.com/TheShining/tauri-zero/actions/workflows/ci.yml/badge.svg)](https://github.com/TheShining/tauri-zero/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-<!-- TODO: 在这里放一张应用截图或 GIF，放在首屏能显著提升 star 转化率 -->
-<!-- TODO: add an app screenshot or GIF here to boost conversions -->
+![tauri-zero 演示全景：模拟桌面上同屏展示主窗口笔记列表、独立编辑窗口、设置窗口与托盘右键菜单 / tauri-zero at a glance: a mock desktop showing the note list, the standalone editor, the settings window and the tray right-click menu together](guide/imgs/desktop-hero.png)
 
 ## 为什么是 tauri-zero / Why tauri-zero
 
@@ -21,6 +20,14 @@ Routing, state, requests, i18n, logging, error handling, CSP security, CI/CD, au
 
 - **个人开发者 / Indie developers**：5 分钟起一个结构清晰、工程化完备的桌面应用。
 - **企业团队 / Teams**：直接获得 lint / format / commit 规范 / 测试 / CI / 自动更新的完整质量门禁。
+
+## 内置演示：一个真实的便签小应用 / Built-in demo: a real notes app
+
+clone 后 `pnpm tauri dev` 看到的是一个可直接使用的便签应用：主窗口是笔记列表，双击笔记弹出独立编辑窗口（未保存关闭拦截、Ctrl+S 保存），托盘可一键新建；头部只保留明暗切换和设置齿轮两个快捷入口，设置是以独立窗口呈现的（左侧菜单 + 分组行式布局）。路由、状态、IPC、SQLite、多窗口、托盘——所有能力都串在真实场景里，而不是按钮墙。
+
+After cloning, `pnpm tauri dev` opens a working notes app: the main window lists notes, double-clicking one opens a standalone editor window (unsaved-change interception, Ctrl+S to save), and the tray offers one-click note creation. The header keeps only two shortcuts — theme toggle and a settings gear — and settings live in their own standalone window (side menu plus grouped rows). Routing, state, IPC, SQLite, multi-window, tray — everything is woven into real scenarios instead of a wall of buttons.
+
+
 
 ## 特性 / Features
 
@@ -47,15 +54,16 @@ Requires Node ≥ 22, pnpm ≥ 9, and Rust stable.
 
 ## 使用指南 / Guides
 
-完整的功能使用说明见 [guide/](guide/README.md)：路由、状态管理、请求层、国际化、Rust 命令、SQLite 持久化、系统插件、自动更新、环境变量、测试与 CI/CD。
+完整的功能使用说明见 [guide/](guide/README.md)：路由、状态管理、请求层、国际化、Rust 命令、SQLite 持久化、系统插件、自动更新、环境变量、测试与 CI/CD。接入自己的业务前先读 [guide/customize.md](guide/customize.md)——demo 便签应用哪些可删、如何换成你的领域。
 
-See [guide/](guide/README.md) for full docs: routing, state, requests, i18n, Rust commands, SQLite, plugins, auto-update, env vars, testing & CI/CD.
+See [guide/](guide/README.md) for full docs: routing, state, requests, i18n, Rust commands, SQLite, plugins, auto-update, env vars, testing & CI/CD. Before wiring in your own business, read [guide/customize.md](guide/customize.md) — what in the demo is safe to replace and how.
 
 ## 目录结构 / Structure
 
 ```
 tauri-zero/
 ├── src/                 # 前端源码（api / components / pages / router / stores / locales）
+│   └── pages/notes/     # demo 便签应用：列表 + 独立编辑窗口（接入时整体替换即可）
 ├── src-tauri/           # Rust 端（domain / platform / state / migrations / capabilities）
 ├── guide/               # 使用指南 / user guides
 ├── .github/workflows/   # CI / release 工作流

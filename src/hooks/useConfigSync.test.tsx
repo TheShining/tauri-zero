@@ -69,7 +69,7 @@ describe("useConfigSync", () => {
     expect(listenMock).toHaveBeenCalledWith(APP_EVENTS.configChanged, expect.any(Function));
     expect(captured).toBeDefined();
 
-    emit({ theme: "dark", locale: "en-US" });
+    emit({ theme: "dark", locale: "en-US", primaryColor: "#1677ff" });
 
     expect(useAppStore.getState().theme).toBe("dark");
     expect(useAppStore.getState().locale).toBe("en-US");
@@ -86,7 +86,7 @@ describe("useConfigSync", () => {
 
     const subscriber = vi.fn();
     const unsubscribe = useAppStore.subscribe(subscriber);
-    emit({ theme: "light", locale: "zh-CN" });
+    emit({ theme: "light", locale: "zh-CN", primaryColor: "#1677ff" });
 
     expect(subscriber).not.toHaveBeenCalled();
     unsubscribe();

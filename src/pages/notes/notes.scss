@@ -1,0 +1,80 @@
+/* antd v6 默认开启 CSS Variables 模式，直接引用 --ant-* 变量即可跟随明暗主题与主题色。 */
+
+/* antd v6 enables CSS-variables mode by default, so referencing --ant-* tokens follows the dark/light theme and primary color automatically. */
+.note-list-item {
+  transition: background-color 0.2s ease;
+}
+
+.note-list-item:hover {
+  background-color: var(--ant-color-fill-tertiary);
+}
+
+.note-list-item:not(:last-child) {
+  border-bottom: 1px solid var(--ant-color-border-secondary);
+}
+
+/*
+ * 编辑窗口正文：宽屏居中阅读宽度。所有间距都收敛到这里（不要在组件里写 inline padding，
+ * 否则 inline style 会盖掉这里的水平内边距，正文直接贴边）。
+ * Editor body: centered reading width on wide screens. Keep every spacing value here
+ * (inline padding in the component would override the horizontal padding and pin the content
+ * flush against the window edge).
+ */
+.note-editor-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 32px 8px;
+}
+
+/* 类名拼接 .ant-input 抬优先级，压掉 antd borderless 输入框自带的内边距。 */
+
+/* Chaining .ant-input raises specificity above antd's own padding on borderless inputs. */
+.note-editor-title.ant-input {
+  padding: 0;
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 32px;
+}
+
+.note-editor-title.ant-input::placeholder {
+  font-weight: 500;
+  color: var(--ant-color-text-quaternary);
+}
+
+.note-editor-divider {
+  flex-shrink: 0;
+  height: 1px;
+  margin: 12px 0 16px;
+}
+
+.note-editor-textarea.ant-input {
+  flex: 1;
+  min-height: 0;
+  resize: none;
+  padding: 0;
+  line-height: 1.75;
+}
+
+/* 底栏通栏，上分割线贯穿窗口；内部内容与正文同宽对齐。 */
+
+/* The footer spans the full window with a full-width divider, while its inner
+   content aligns to the same reading width as the body. */
+.note-editor-footer {
+  flex-shrink: 0;
+  border-top: 1px solid transparent;
+}
+
+.note-editor-footer__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 10px 32px;
+}

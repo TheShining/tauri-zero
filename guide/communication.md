@@ -211,8 +211,9 @@ macro_rules! all_handlers {
 // src/api/ipc/events.ts
 export const APP_EVENTS = {
   configChanged: "app://config-changed",
-  trayNavigate: "tray://navigate",
   trayCheckUpdate: "tray://check-update",
+  trayNewNote: "tray://new-note",
+  noteChanged: "note://changed",
   windowChanged: "window://changed",
   windowConfirmClose: "window://confirm-close",
 } as const;
@@ -223,8 +224,9 @@ export const APP_EVENTS = {
 | 常量 | 事件名 | 方向 | Payload | 用途 |
 |------|--------|------|---------|------|
 | `APP_EVENTS.configChanged` | `app://config-changed` | 任意窗口 → 全部窗口 | `{ theme, locale }` | 主题/语言跨窗口同步 |
-| `APP_EVENTS.trayNavigate` | `tray://navigate` | 托盘弹窗/子窗口 → main | `"/settings"` | 让主窗口跳转路由 |
-| `APP_EVENTS.trayCheckUpdate` | `tray://check-update` | Rust → main window | `null` | 触发更新检查 |
+| `APP_EVENTS.trayCheckUpdate` | `tray://check-update` | Rust → main window | `null` | 触发更新检查（发现新版本时打开设置窗口） |
+| `APP_EVENTS.trayNewNote` | `tray://new-note` | Rust → main window | `null` | 托盘「新建笔记」，主窗口收到后执行创建 |
+| `APP_EVENTS.noteChanged` | `note://changed` | 编辑窗口 → 全部窗口 | 笔记 id | 笔记保存后列表页刷新预览 |
 | `APP_EVENTS.windowChanged` | `window://changed` | Rust → 全部窗口 | `WindowSnapshot[]` | 窗口注册表快照推送 |
 | `APP_EVENTS.windowConfirmClose` | `window://confirm-close` | Rust → 目标窗口 | window label | 请求前端确认关闭（有未保存内容） |
 
@@ -248,8 +250,8 @@ await emit(APP_EVENTS.configChanged, { theme, locale });
 import { APP_EVENTS } from "../api/ipc/events";
 import { useTauriEvent } from "../hooks/useTauriEvent";
 
-useTauriEvent(APP_EVENTS.trayNavigate, (event) => {
-  void navigate(event.payload); // payload 类型由注册表自动推断为 string
+useTauriEvent(APP_EVENTS.noteChanged, (event) => {
+  void reload(); // payload 类型由注册表自动推断为 number（变更的笔记 id）
 });
 ```
 

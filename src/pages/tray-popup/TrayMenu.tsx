@@ -31,6 +31,10 @@ export default function TrayMenu() {
   } as CSSProperties;
   return (
     <div className="tray-menu" style={rootStyle}>
+      <div className="tray-menu-item" onClick={() => void handleAction("new_note")}>
+        {t("tray.newNote")}
+      </div>
+      <div className="tray-menu-divider" />
       <div className="tray-menu-item" onClick={() => void handleAction("show")}>
         {t("tray.show")}
       </div>

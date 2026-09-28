@@ -10,17 +10,11 @@ describe("app router", () => {
     expect(router.state.location.hash).toBe("");
   });
 
-  it("defines a settings child route", () => {
-    const router = createAppRouter();
-    const routes = router.routes[0].children ?? [];
-
-    expect(routes.some((route) => route.path === "settings")).toBe(true);
-  });
-
-  it("defines a standalone document window route", () => {
+  it("defines standalone window routes for settings and the note editor", () => {
     const router = createAppRouter();
     const standalone = router.routes.filter((route) => route.path?.startsWith("/"));
 
-    expect(standalone.some((route) => route.path === "/documents/:contextId")).toBe(true);
+    expect(standalone.some((route) => route.path === "/settings")).toBe(true);
+    expect(standalone.some((route) => route.path === "/notes/:contextId")).toBe(true);
   });
 });

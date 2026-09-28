@@ -728,10 +728,10 @@ fn window_spec(kind: WindowKind) -> WindowSpec {
             label: DOCUMENT_LABEL_PREFIX,
             requires_context: true,
             creation: Some(WindowCreation {
-                title: "tauri-zero - Document",
-                route: "/documents/{contextId}",
-                width: 860.0,
-                height: 640.0,
+                title: "tauri-zero - Note",
+                route: "/notes/{contextId}",
+                width: 640.0,
+                height: 520.0,
                 resizable: true,
             }),
         },
@@ -928,7 +928,7 @@ mod tests {
                 Some("demo-note")
             )
             .unwrap(),
-            "/documents/demo-note"
+            "/notes/demo-note"
         );
     }
 

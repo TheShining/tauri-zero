@@ -46,45 +46,44 @@
     flex-shrink: 0;
   }
 
-  &__nav {
-    display: flex;
-    gap: 4px;
-  }
-
-  &__nav-link {
-    padding: 2px 10px;
-    border-radius: 6px;
-    font-size: 13px;
-    text-decoration: none;
-
-    &:hover {
-      background: rgb(128 128 128 / 15%);
-    }
-  }
-
   &__spacer {
     flex: 1;
     min-width: 24px;
     height: 100%;
   }
 
-  /*
-   * 压掉 antd Button 的默认样式（阴影、白底、边框），让操作按钮融入标题栏。
-   * Neutralize default antd Button styling (shadow, white background, border) so action buttons blend into the title bar.
-   */
-  .ant-btn {
-    box-shadow: none;
-    border: none;
-    background: transparent;
-    padding: 2px 10px;
-    height: 26px;
-    font-size: 13px;
-  }
-
   &__actions {
     display: flex;
     align-items: center;
     gap: 4px;
+    padding-right: 6px;
+  }
+
+  /*
+   * 主题/设置快捷键用原生按钮而非 antd Button：antd 按钮的 hover 边框态比这里的覆盖优先级高，
+   * 会在暗色主题下冒出一条白边；原生按钮与窗口控制键一致，天然不打架。
+   * Theme/settings shortcuts use native buttons instead of antd Button: antd's hover border state
+   * outranks the overrides here and leaks a white border in dark mode, while native buttons behave
+   * exactly like the window controls with no style conflicts.
+   */
+  &__icon-btn {
+    width: 30px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: inherit;
+    font-size: 15px;
+    line-height: 0;
+    cursor: pointer;
+    transition: background 0.15s ease;
+
+    &:hover {
+      background: rgb(128 128 128 / 15%);
+    }
   }
 
   &__controls {

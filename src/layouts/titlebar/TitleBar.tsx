@@ -3,21 +3,18 @@ import { isTauri } from "@tauri-apps/api/core";
 import { theme as antdTheme } from "antd";
 import { useEffect, useState, type MouseEvent } from "react";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router";
-import { emitTo } from "@tauri-apps/api/event";
 import { osPlatform } from "../../api/plugins/os";
 import ThemeToggle from "../../components/ThemeToggle";
+import SettingsButton from "../../components/SettingsButton";
 import WindowControls from "./WindowControls";
-import LocaleSwitch from "../../components/LocaleSwitch";
 import { useWindowStore } from "../../stores/useWindowStore";
 import { MAIN_WINDOW_LABEL, WINDOW_LABELS } from "../../api/ipc/modules/window";
-import { APP_EVENTS } from "../../api/ipc/events";
 
 import "./TitleBar.scss";
 
 const appTitle = import.meta.env.APP_PUBLIC_APP_TITLE ?? "tauri-zero";
 
-export default function TitleBar() {
+export default function TitleBar({ title }: { title?: string }) {
   const { t } = useTranslation();
   const { token } = antdTheme.useToken();
   // 浏览器开发模式（pnpm dev 无 Tauri 运行时）降级为静态标题栏，三键变为 no-op。
@@ -36,25 +33,18 @@ export default function TitleBar() {
   const dirty = snapshot?.dirty ?? false;
   const contextId = snapshot?.contextId;
 
-  const isMain = label === MAIN_WINDOW_LABEL;
-  const focus = useWindowStore((state) => state.focus);
+  // 快捷入口（主题/设置）只留在主窗口：编辑与设置窗口保持纯标题栏，避免每个窗口都背一份重复操作区。
+  // Quick actions (theme/settings) stay in the main window only; editor and settings windows keep a
+  // bare title bar so not every window carries the duplicated action cluster.
+  const showActions = label === MAIN_WINDOW_LABEL;
 
-  // 子窗口里的导航转发给主窗口执行（复用托盘已有的 tray://navigate 事件，定向发给 main，子窗口自己的 BasicLayout 不会收到），再把主窗口唤起聚焦。
-  // Forward navigation from child windows to the main window by reusing the existing tray://navigate event,
-  // targeted at main so the child window's own BasicLayout does not receive it; then bring the main window to focus.
-  const handleNavClick = (to: string) => (event: MouseEvent<HTMLAnchorElement>) => {
-    if (isMain) return;
-    event.preventDefault();
-    void emitTo(MAIN_WINDOW_LABEL, APP_EVENTS.trayNavigate, to).catch((error) => {
-      console.error("[TitleBar] forward navigation failed:", error);
-    });
-    void focus(MAIN_WINDOW_LABEL).catch((error) => {
-      console.error("[TitleBar] focus main window failed:", error);
-    });
-  };
   // 无边框后原生标题不可见；settings/document 窗口用语义标题或上下文顶替。
   // After going frameless the native title is invisible; settings/document windows use a semantic title or context instead.
-  const titleSuffix = contextId ?? (label === WINDOW_LABELS.settings ? t("common.settings") : null);
+  // 页面可传入自定义标题（如编辑窗口显示笔记标题）；否则回退到 contextId 或语义化窗口名。
+  // Pages may pass a custom title (e.g. the editor shows the note title);
+  // otherwise fall back to the contextId or a semantic window name.
+  const titleSuffix =
+    title ?? contextId ?? (label === WINDOW_LABELS.settings ? t("common.settings") : null);
 
   useEffect(() => {
     if (!appWindow) return;
@@ -104,31 +94,14 @@ export default function TitleBar() {
         </span>
       </div>
 
-      <nav className="titlebar__nav">
-        <Link
-          to="/"
-          className="titlebar__nav-link"
-          style={{ color: token.colorTextSecondary }}
-          onClick={handleNavClick("/")}
-        >
-          {t("common.home")}
-        </Link>
-        <Link
-          to="/settings"
-          className="titlebar__nav-link"
-          style={{ color: token.colorTextSecondary }}
-          onClick={handleNavClick("/settings")}
-        >
-          {t("common.settings")}
-        </Link>
-      </nav>
-
       <div className="titlebar__spacer" onMouseDown={handleRegionMouseDown} />
 
-      <div className="titlebar__actions">
-        <ThemeToggle />
-        <LocaleSwitch />
-      </div>
+      {showActions ? (
+        <div className="titlebar__actions">
+          <ThemeToggle />
+          <SettingsButton />
+        </div>
+      ) : null}
 
       {isMacOS ? null : <WindowControls appWindow={appWindow} maximized={maximized} />}
     </header>

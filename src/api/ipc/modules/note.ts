@@ -16,6 +16,10 @@ export function listNotes() {
   return ipcInvoke<Note[]>("list_notes");
 }
 
+export function getNote(id: number) {
+  return ipcInvoke<Note>("get_note", { id });
+}
+
 export function createNote(title: string, content: string) {
   return ipcInvoke<Note>("create_note", { title, content });
 }

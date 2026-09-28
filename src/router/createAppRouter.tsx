@@ -2,11 +2,11 @@ import { createHashRouter } from "react-router";
 import { lazy } from "react";
 import BasicLayout from "../layouts/BasicLayout";
 
-const Home = lazy(() => import("../pages/main/Home"));
+const NoteList = lazy(() => import("../pages/notes/NoteList"));
 const Settings = lazy(() => import("../pages/settings/Settings"));
 const NotFound = lazy(() => import("../pages/shared/NotFound"));
 const TrayPopup = lazy(() => import("../pages/tray-popup/TrayPopup"));
-const Document = lazy(() => import("../pages/document/Document"));
+const NoteEditor = lazy(() => import("../pages/notes/NoteEditor"));
 
 export function createAppRouter() {
   return createHashRouter([
@@ -14,8 +14,7 @@ export function createAppRouter() {
       path: "/",
       element: <BasicLayout />,
       children: [
-        { index: true, element: <Home /> },
-        { path: "settings", element: <Settings /> },
+        { index: true, element: <NoteList /> },
         { path: "*", element: <NotFound /> },
       ],
     },
@@ -26,10 +25,20 @@ export function createAppRouter() {
       element: <TrayPopup />,
     },
     {
-      // 文档窗口由 WindowManager 创建，并作为独立顶级窗口渲染。
-      // Document windows are created by WindowManager and render as standalone top-level windows.
-      path: "/documents/:contextId",
-      element: <Document />,
+      // 设置是独立单例窗口（后端 window.rs 的 Settings spec：单例、可 IPC 关闭），
+      // 由标题栏齿轮按钮或托盘菜单打开，不经过 BasicLayout。
+      // Settings is a standalone singleton window (the Settings spec in the backend's window.rs:
+      // singleton, closable via IPC), opened from the title-bar gear button or the tray menu,
+      // and does not go through BasicLayout.
+      path: "/settings",
+      element: <Settings />,
+    },
+    {
+      // 笔记编辑窗口由 WindowManager 创建，并作为独立顶级窗口渲染；路由后缀与后端 window.rs 的 spec 保持一致。
+      // Note editor windows are created by the WindowManager and rendered as standalone top-level
+      // windows; the route pattern must stay in sync with the window spec in the backend's window.rs.
+      path: "/notes/:contextId",
+      element: <NoteEditor />,
     },
   ]);
 }

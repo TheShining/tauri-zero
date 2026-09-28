@@ -11,11 +11,11 @@ import { createHashRouter } from "react-router";
 import { lazy } from "react";
 import BasicLayout from "../layouts/BasicLayout";
 
-const Home = lazy(() => import("../pages/main/Home"));
+const NoteList = lazy(() => import("../pages/notes/NoteList"));
 const Settings = lazy(() => import("../pages/settings/Settings"));
 const NotFound = lazy(() => import("../pages/shared/NotFound"));
 const TrayPopup = lazy(() => import("../pages/tray-popup/TrayPopup"));
-const Document = lazy(() => import("../pages/document/Document"));
+const NoteEditor = lazy(() => import("../pages/notes/NoteEditor"));
 
 export function createAppRouter() {
   return createHashRouter([
@@ -23,14 +23,15 @@ export function createAppRouter() {
       path: "/",
       element: <BasicLayout />,
       children: [
-        { index: true, element: <Home /> },
-        { path: "settings", element: <Settings /> },
+        { index: true, element: <NoteList /> },
         { path: "*", element: <NotFound /> },
       ],
     },
-    // 独立窗口路由：不使用 BasicLayout，在专用无边框窗口中渲染
+    // 独立窗口路由：不使用 BasicLayout，在专用 Tauri 窗口中渲染
+    // （settings 是单例窗口，由标题栏齿轮按钮或托盘菜单打开）
     { path: "/tray-popup", element: <TrayPopup /> },
-    { path: "/documents/:contextId", element: <Document /> },
+    { path: "/settings", element: <Settings /> },
+    { path: "/notes/:contextId", element: <NoteEditor /> },
   ]);
 }
 ```
@@ -42,7 +43,7 @@ export function createAppRouter() {
 
 ### 新增页面
 
-1. 在 `src/pages/<窗口kind>/` 下创建页面组件——`pages` 顶级目录按窗口分组（`main` / `settings` / `document` / `tray-popup`），通用页面放 `shared/`。
+1. 在 `src/pages/<窗口kind>/` 下创建页面组件——`pages` 顶级目录按窗口分组（demo 中为 `notes` / `settings` / `tray-popup`），通用页面放 `shared/`。
 2. 在 `createAppRouter.tsx` 中 `lazy` 引入并注册路由。
 3. 页面默认懒加载，`Suspense` 已在 `src/router/index.tsx` 中包裹。
 
@@ -174,7 +175,7 @@ try {
 import { useTranslation } from "react-i18next";
 
 const { t } = useTranslation();
-return <span>{t("common.home")}</span>;
+return <span>{t("notes.newNote")}</span>;
 ```
 
 ### 新增文案
@@ -200,11 +201,13 @@ setLocale("en-US");
 
 - `ErrorBoundary`（`src/app/`）：全局错误边界，捕获渲染错误并展示兜底页（文案走 `i18n.t`）。
 - `feedback`（`src/utils/feedback.ts`）：统一消息/通知入口（`feedback.success/error/info/notify`）。放在 utils 层而非 components，api/stores 等下层模块也能使用，保证依赖方向单向。
-- `TitleBar`（`src/layouts/titlebar/`）：无边框标题栏（拖拽/导航/主题与语言切换）；窗口三键在同目录 `WindowControls.tsx`，
-  SVG 图标在 `TitleBarIcons.tsx`。
-- `ThemeToggle`：明暗主题切换。
-- `LocaleSwitch`：中英切换。
+- `TitleBar`（`src/layouts/titlebar/`）：无边框标题栏（拖拽/窗口三键/脏标记圆点）。快捷动作区（主题切换、设置入口）
+  只在主窗口渲染，编辑与设置窗口保持纯标题栏；窗口三键在同目录 `WindowControls.tsx`，SVG 图标在 `TitleBarIcons.tsx`。
+- `ThemeToggle` / `SettingsButton`：标题栏快捷入口，均为图标按钮（SVG 图标在 `src/components/icons.tsx`，
+  demo 刻意不引入 `@ant-design/icons`）；`SettingsButton` 经 `openSettingsWindow()`（`src/utils/settings.ts`）
+  打开/聚焦独立的 settings 单例窗口，浏览器开发模式降级为同页跳转。
 - `UpdateChecker`（`src/pages/settings/`）：检查更新 UI（settings 页面私有组件）；检查入口统一走 `useUpdater` hook。
+  主题/语言切换已从标题栏收口到设置窗口（外观/语言 Segmented），托盘弹窗等通过 `app://config-changed` 广播同步。
 
 ```tsx
 import { feedback } from "../utils/feedback";

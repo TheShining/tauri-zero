@@ -8,10 +8,13 @@ import type { WindowSnapshot } from "./modules/window";
 export const APP_EVENTS = {
   /** 全局配置（主题/语言）变更广播。 / Global config (theme/locale) change broadcast. */
   configChanged: "app://config-changed",
-  /** 托盘触发的导航指令，payload 为目标路由路径。 / Tray-triggered navigation; payload is the target route path. */
-  trayNavigate: "tray://navigate",
+
   /** 托盘触发的更新检查。 / Tray-triggered update check. */
   trayCheckUpdate: "tray://check-update",
+  /** 托盘触发的「新建笔记」指令，payload 为空。 / Tray-triggered "new note" command; empty payload. */
+  trayNewNote: "tray://new-note",
+  /** 笔记内容变更广播，payload 为变更的笔记 id；列表页据此刷新。 / Note change broadcast; payload is the changed note id and list pages refresh on it. */
+  noteChanged: "note://changed",
   /** 后端窗口注册表快照推送。 / Backend window-registry snapshot push. */
   windowChanged: "window://changed",
   /** 后端请求当前窗口确认关闭（有未保存内容）。 / Backend asks this window to confirm closing (unsaved content). */
@@ -23,6 +26,7 @@ export type AppEventName = (typeof APP_EVENTS)[keyof typeof APP_EVENTS];
 export interface ConfigChangedPayload {
   theme: ThemeMode;
   locale: Locale;
+  primaryColor: string;
 }
 
 // 事件名到 payload 类型的映射：供 useTauriEvent / emit 按名推断 payload 类型，
@@ -31,8 +35,10 @@ export interface ConfigChangedPayload {
 // by name. Every new event must be registered here.
 export interface AppEventPayloadMap {
   [APP_EVENTS.configChanged]: ConfigChangedPayload;
-  [APP_EVENTS.trayNavigate]: string;
+
   [APP_EVENTS.trayCheckUpdate]: null;
+  [APP_EVENTS.trayNewNote]: null;
+  [APP_EVENTS.noteChanged]: number;
   [APP_EVENTS.windowChanged]: WindowSnapshot[];
   [APP_EVENTS.windowConfirmClose]: string;
 }

@@ -9,6 +9,11 @@ pub async fn list_notes(state: tauri::State<'_, SharedDbState>) -> AppResult<Vec
 }
 
 #[tauri::command]
+pub async fn get_note(state: tauri::State<'_, SharedDbState>, id: i64) -> AppResult<Note> {
+    NoteService::get(&state.db, id).await
+}
+
+#[tauri::command]
 pub async fn create_note(
     state: tauri::State<'_, SharedDbState>,
     title: String,

@@ -19,7 +19,7 @@ const listenMock = vi.mocked(listen);
 type Handler = (event: Event<string>) => void;
 
 function Probe({ handler }: { handler: Handler }) {
-  useTauriEvent(APP_EVENTS.trayNavigate, handler);
+  useTauriEvent(APP_EVENTS.windowConfirmClose, handler);
   return null;
 }
 
@@ -62,13 +62,13 @@ describe("useTauriEvent", () => {
     });
 
     expect(listenMock).toHaveBeenCalledTimes(1);
-    expect(listenMock).toHaveBeenCalledWith(APP_EVENTS.trayNavigate, expect.any(Function));
+    expect(listenMock).toHaveBeenCalledWith(APP_EVENTS.windowConfirmClose, expect.any(Function));
     expect(captured).toBeDefined();
 
     act(() => {
-      captured?.({ event: APP_EVENTS.trayNavigate, id: 1, payload: "/settings" });
+      captured?.({ event: APP_EVENTS.windowConfirmClose, id: 1, payload: "document-demo" });
     });
-    expect(handler).toHaveBeenCalledWith(expect.objectContaining({ payload: "/settings" }));
+    expect(handler).toHaveBeenCalledWith(expect.objectContaining({ payload: "document-demo" }));
   });
 
   // handler 身份每次渲染都变化时不得重新订阅，且事件路由到最新 handler。
@@ -88,7 +88,7 @@ describe("useTauriEvent", () => {
     expect(listenMock).toHaveBeenCalledTimes(1);
 
     act(() => {
-      captured?.({ event: APP_EVENTS.trayNavigate, id: 2, payload: "/" });
+      captured?.({ event: APP_EVENTS.windowConfirmClose, id: 2, payload: "main" });
     });
     expect(first).not.toHaveBeenCalled();
     expect(second).toHaveBeenCalledTimes(1);

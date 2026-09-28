@@ -161,7 +161,7 @@ pub async fn list_notes(state: tauri::State<'_, SharedDbState>) -> AppResult<Vec
 2. 不要手改历史迁移文件；
 3. 在对应 domain 的 `model.rs` 和 `repo.rs` 中更新映射与查询。
 
-示例业务域见 `domain/note/`，提供 `list_notes` / `create_note` / `update_note` / `delete_note`。
+示例业务域见 `domain/note/`，提供 `list_notes` / `get_note` / `create_note` / `update_note` / `delete_note`，由前端便签 demo（`pages/notes/`）完整消费。
 
 ## 应用配置
 
