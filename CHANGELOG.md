@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.1](https://github.com/TheShining/tauri-zero/compare/v0.6.0...v0.6.1) (2026-11-10)
+
+
+### Bug Fixes
+
+* **updater:** 完善自动更新发布链路 / complete updater release pipeline ([a170e16](https://github.com/TheShining/tauri-zero/commit/a170e16706c78b2016d5e5e79af6e62f22e9a45e))
+
 ## [0.6.0](https://github.com/TheShining/tauri-zero/compare/v0.5.0...v0.6.0) (2026-09-28)
 
 

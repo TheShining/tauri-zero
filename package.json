@@ -1,7 +1,7 @@
 {
   "name": "tauri-zero",
   "private": true,
-  "version": "0.6.0",
+  "version": "0.6.1",
   "type": "module",
   "scripts": {
     "tauri:dev": "node scripts/tauri.mjs development dev",
