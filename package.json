@@ -18,6 +18,8 @@
     "build:prod": "tsc && vite build --mode production",
     "preview": "vite preview",
     "test": "vitest run",
+    "test:release": "node --test scripts/release-manifest.test.mjs scripts/release-github.test.mjs scripts/generate-updater-key.test.mjs",
+    "updater:keygen": "node scripts/generate-updater-key.mjs",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",

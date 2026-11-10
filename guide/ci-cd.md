@@ -1,140 +1,126 @@
-# CI/CD 与发布
+# CI/CD 与自动更新发布 / CI/CD and Updater Releases
 
-tauri-zero 用三个 GitHub Actions 工作流串起「质量门禁 → 自动发版 → 构建分发」的完整链路。
+tauri-zero 使用 GitHub Releases 分发安装包与更新清单。接入自己的项目时，先完成仓库地址与签名身份配置，再发布第一个版本。
 
-## 三个工作流的分工
+## 接入准备 / Integration setup
 
-| 工作流 | 文件 | 触发时机 | 职责 |
-| --- | --- | --- | --- |
-| CI | `.github/workflows/ci.yml` | PR 与 push 到 `main` | 质量门禁：lint / typecheck / test / Rust 检查 |
-| release-please | `.github/workflows/release-please.yml` | push 到 `main` | 自动发版：算版本号、生成 changelog、创建 release PR 与 tag |
-| release | `.github/workflows/release.yml` | push `v*` tag，或手动 `workflow_dispatch` | 构建分发：三平台打包、签名、上传产物与更新清单 |
+1. 修改 `src-tauri/tauri.conf.json` 中的应用名、identifier，以及 `plugins.updater.endpoints` 的仓库地址。更新地址使用 `https://github.com/<owner>/<repo>/releases/latest/download/latest.json`。
+2. 配置自己的 updater 密钥对和公钥（见下文）。已有用户的应用必须沿用其已安装版本信任的公钥。
+3. 在 GitHub 仓库配置以下 Actions secrets：
 
-三者关系：
+| Secret | 用途 |
+| --- | --- |
+| `RELEASE_PLEASE_TOKEN` | 创建 release PR、草稿和 tag；需有仓库 Contents、Pull requests 写权限，并能触发后续工作流 |
+| `TAURI_SIGNING_PRIVATE_KEY` | updater 签名私钥完整内容；必填，发布前检查非空 |
+| `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` | 私钥密码；仅有密码的私钥需要 |
 
-```text
-提交(Conventional Commits) → push main
-        │
-        ├─ CI：跑质量门禁（不打包）
-        │
-        └─ release-please：生成 release PR
-                 │
-                 └─ 合并 release PR → 打 tag（如 v0.1.1）+ 创建 GitHub Release
-                          │
-                          └─ release：三平台构建 + 签名 + 上传产物/更新清单
-                                   │
-                                   └─ 客户端 UpdateChecker 拉取清单 → 自动更新
-```
+构建与上传使用工作流自带的 `GITHUB_TOKEN`，权限限制为所需 job 的 Contents 写权限。release-please 使用 PAT 或相应 GitHub App token：普通 `GITHUB_TOKEN` 产生的 tag push 不会自动触发另一个工作流。
 
-> 注意：release-please 必须使用 PAT（`RELEASE_PLEASE_TOKEN`）而不是 `GITHUB_TOKEN`，否则它打 tag 后不会触发 `release` 工作流。详见下文「配置 RELEASE_PLEASE_TOKEN」。
+updater 签名用于校验更新包，Windows 代码签名、macOS 签名/公证属于各平台的分发要求，需要接入开发者另行配置。
 
-### CI（质量门禁）
-
-`.github/workflows/ci.yml` 在 PR 与 push 到 `main` 时，于 ubuntu / windows / macos 三平台执行：
+## 发布流程 / Release flow
 
 ```text
-lint → typecheck → test → rust:check → rust:clippy → rust:test
+push main → CI 检查 + release-please 维护 release PR
+合并 release PR → 版本文件同步 + vX.Y.Z tag + 草稿 Release
+               → prepare：版本/私钥检查，定位草稿与提交 SHA
+               → build：四目标并行构建、签名、上传草稿资产
+               → publish：下载资产并验签，生成五份更新清单
+                          全部成功后发布并设为 latest
 ```
 
-它只做检查，不执行 `tauri build`，因此不需要签名私钥。
+| 工作流 | 触发 | 职责 |
+| --- | --- | --- |
+| `.github/workflows/ci.yml` | PR、push main | 前端、发布脚本与 Rust 检查；不需要签名私钥 |
+| `.github/workflows/release-please.yml` | push main | 更新说明、release PR 与草稿/tag |
+| `.github/workflows/release.yml` | push `v*` tag、手动指定 tag | 验证、构建、验签、清单与正式发布 |
 
-### release-please（自动发版）
+`release-please-config.json` 启用 `draft` 与 `force-tag-creation`：草稿尚未公开时就创建 tag，既能触发构建，也能让 release-please 正确识别历史版本。
 
-`.github/workflows/release-please.yml` 使用 `googleapis/release-please-action`，基于 Conventional Commits 自动：
+只接受稳定 `vX.Y.Z` tag。`package.json`、`src-tauri/Cargo.toml`、`src-tauri/tauri.conf.json` 和 `.release-please-manifest.json` 的版本必须与 tag 一致。beta/灰度渠道不在当前工作流支持范围内。
 
-1. 计算下一个版本号：`feat` → minor，`fix` → patch，`BREAKING CHANGE` → major。
-2. 生成/更新 `CHANGELOG.md`。
-3. 创建 release PR，同步更新 `package.json`、`src-tauri/tauri.conf.json`、`src-tauri/Cargo.toml` 的版本号。
-4. 合并 release PR 后，自动打 `v*` tag 并创建 GitHub Release。
+## 构建目标与清单 / Targets and manifests
 
-> 版本号同步规则见 `release-please-config.json` 与 `.release-please-manifest.json`。
+| 更新目标 | Rust target | 更新包 |
+| --- | --- | --- |
+| `windows-x86_64` | `x86_64-pc-windows-msvc` | NSIS `.exe` |
+| `linux-x86_64` | `x86_64-unknown-linux-gnu` | `.AppImage` |
+| `darwin-x86_64` | `x86_64-apple-darwin` | `.app.tar.gz` |
+| `darwin-aarch64` | `aarch64-apple-darwin` | `.app.tar.gz` |
 
-> 只有 `feat` / `fix` / `BREAKING CHANGE` 会触发版本 bump；`chore`、`docs`、`style`、`refactor`、`perf`、`test`、`build`、`ci` 等前缀不会发版。
+同时提供 MSI、DEB、DMG 手动安装包。Debian 安装版使用 `linux-x86_64-deb` 条目中的已签名 `.deb` 升级，AppImage 使用通用 `linux-x86_64` 条目，避免混用包格式。Linux 使用 Ubuntu 22.04 构建；目标系统仍须满足 Tauri/WebKitGTK 等运行依赖。
 
-### release（构建分发）
+官方 `tauri-apps/tauri-action` 负责构建与上传，每个目标都显式指定架构。发布资产命名为 `[name]_[version]_[platform]_[arch][setup][ext]`，例如：
 
-`.github/workflows/release.yml` 在推送 `v*` tag 时触发，三平台构建并上传产物（含 updater 的 `.json` 清单）。
+```text
+tauri-zero_0.6.0_windows_x64-setup.exe
+tauri-zero_0.6.0_windows_x64-setup.exe.sig
+tauri-zero_0.6.0_linux_amd64.AppImage
+tauri-zero_0.6.0_darwin_x64.app.tar.gz
+tauri-zero_0.6.0_darwin_aarch64.app.tar.gz
+```
 
-此外支持手动触发（`workflow_dispatch`），用于给已存在的 release 补传产物：
+矩阵任务不写共享清单，避免并行覆盖。`scripts/release.mjs finalize` 集中读取草稿的实际资产，下载四个目标的更新包（含 Debian 专用包）及 `.sig`，按配置公钥验证 Ed25519 签名、包内容和可信注释；签名不匹配、缺平台、空包、重复或错误 URL 均停止发布。
 
-1. 打开 GitHub 仓库 → **Actions** → 左侧选 **release** → **Run workflow**。
-2. 在 `tag` 输入框填写要构建的 tag（如 `v0.2.0`）。
-3. 点击 **Run workflow**，三平台会重新构建并把产物上传到该 tag 对应的 release。
+集中生成的清单包含 `version`、`notes`、`pub_date` 与各平台的 `url`、`signature`。`signature` 是 `.sig` 文件正文；URL 固定到对应 tag，不使用会变化的 `/latest/download/` 包地址。
 
-## 自动更新签名密钥
+以下五个 JSON 内容一致，都包含四个平台及 Debian 安装类型的专用条目：
 
-Tauri 的自动更新（updater）使用 minisign 签名，需要一对密钥：
+- `latest.json`：新客户端统一入口。
+- `windows-x86_64.json`、`linux-x86_64.json`、`darwin-x86_64.json`、`darwin-aarch64.json`：兼容旧客户端的按平台 endpoint。
 
-- **私钥** `src-tauri/updater.key`：给更新产物签名，**必须保密**，已被 `.gitignore` 忽略。
-- **公钥** `src-tauri/updater.key.pub`：随应用分发，客户端用它校验签名，可提交到仓库。
+因此已有安装版即使仍使用 `{{target}}-{{arch}}.json`，也能找到新版本。兼容成立的前提是新包由旧客户端信任的同一密钥签名。
 
-### 生成密钥
+## 密钥管理 / Signing keys
 
-在项目根目录执行：
+新项目首次接入可以执行：
 
 ```bash
-pnpm tauri signer generate -w src-tauri/updater.key
+pnpm updater:keygen
 ```
 
-- `-w` 指定私钥输出路径，同时会在同目录生成 `updater.key.pub` 公钥。
-- 命令会询问是否设置密码；本地/CI 无密码场景直接回车跳过即可。
-- 若已存在密钥，加 `-f` 强制覆盖（会作废旧密钥，慎用）。
+脚本生成 `src-tauri/updater.key` 和 `updater.key.pub`，验证公钥后写入 `tauri.conf.json`。任一密钥文件已存在就拒绝执行，不支持 `--force`。脚本不会把签名材料输出到日志。私钥已 gitignore，应备份并妥善保管。
 
-生成后：
+从模板创建独立新应用时，模板公钥不代表你拥有对应私钥；确认尚无需要兼容的已发布安装版后，移出模板附带的公钥文件，再生成自己的身份。已有应用不要为了修复发布而重新生成密钥。
 
-1. 把公钥内容填入 `src-tauri/tauri.conf.json` 的 `plugins.updater.pubkey`（`updater.key.pub` 文件内容即该值）。
-2. 妥善保管私钥，不要提交到仓库。
+需要密码时，可使用 Tauri CLI 的交互生成方式，并把相应密码配置到上述 secret；随后将生成的公钥写入 `plugins.updater.pubkey`。失败的首次生成可能留下密钥文件，先检查并备份，不要盲目重试覆盖。
 
-### 配置 GitHub Actions
-
-1. 打开 GitHub 仓库 → **Settings → Secrets and variables → Actions → New repository secret**。
-2. 新建名为 `TAURI_SIGNING_PRIVATE_KEY` 的 secret。
-3. 把 `src-tauri/updater.key` 的**完整内容**（一整行 base64 字符串）粘贴为 secret 值。
-4. `release.yml` 已通过环境变量注入：
-
-   ```yaml
-   env:
-     TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-   ```
-
-> 若生成密钥时设置了密码，还需额外配置 `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` secret。
-
-### 配置 RELEASE_PLEASE_TOKEN
-
-GitHub 的 `GITHUB_TOKEN` 触发的事件不会再次触发新的 workflow（防递归）。因此 release-please 若用 `GITHUB_TOKEN` 打 tag，`release` 工作流不会被触发，导致 release 没有编译产物。
-
-解决方法是给 release-please 配置一个 PAT（Personal Access Token）：
-
-1. 在 GitHub 生成一个 PAT：**Settings → Developer settings → Personal access tokens → Tokens (classic)**，勾选 `repo` 与 `workflow` 权限。
-2. 打开仓库 → **Settings → Secrets and variables → Actions → New repository secret**。
-3. 新建名为 `RELEASE_PLEASE_TOKEN` 的 secret，粘贴 PAT。
-4. `release-please.yml` 已使用该 secret：
-
-   ```yaml
-   with:
-     token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
-   ```
-
-> 用 PAT 触发的 tag/release 事件会被视为真实用户操作，从而正常触发下游 `release` 工作流。
-
-### 本地打包
-
-本地执行 `pnpm tauri:build` 同样需要私钥，否则会报 `A public key has been found, but no private key`。
+本地打包：
 
 ```powershell
-# PowerShell
+# 仅设置本机进程变量，不输出私钥。/ Set the local process variable without printing the private key.
 $env:TAURI_SIGNING_PRIVATE_KEY = (Get-Content src-tauri/updater.key -Raw).Trim()
 pnpm tauri:build
 ```
 
+私钥加密时，还需在当前进程设置 `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`。
+
+## 失败恢复与重跑 / Recovery and reruns
+
+任一目标失败或验签失败，Release 保持草稿，客户端继续看到上一正式版本。同 tag 的发布流程串行执行，所有 tag 的最终发布共享一个锁，并在发布前再次比较正式版本，拒绝旧构建抢回 latest。
+
+对失败草稿可在 Actions 的 `release` 工作流选择 **Run workflow**，填写原 tag；或者重跑失败 jobs。脚本复用草稿、保留 release-please 更新说明，重新生成清单。已发布版本拒绝重建与覆盖，需要发布更高版本。
+
+手动 tag 同样支持，但须指向包含新发布脚本的提交，并保持四份版本文件一致。历史 tag 不会自动获得后来新增的工作流代码。每个 build job 开始时会重新检查 draft，避免单独重跑旧 job 覆盖正式资产；不要手动提前发布仍在构建的草稿。
+
+## 验证与验收 / Verification and acceptance
+
+本地无需联网或真实签名私钥即可运行：
+
 ```bash
-# bash / zsh
-export TAURI_SIGNING_PRIVATE_KEY="$(cat src-tauri/updater.key)"
-pnpm tauri:build
+pnpm test:release
+pnpm test
+pnpm typecheck
 ```
 
-## 自动更新流程
+发布脚本测试覆盖真实测试密钥验签、包篡改、错误公钥、缺平台、版本不一致、草稿重跑和旧版本保护。客户端测试覆盖错误、无更新、下载进度、防重复与安装前 dirty 检查。
 
-1. 合并 release PR，release-please 打 tag。
-2. release workflow 构建并上传产物 + 更新清单。
-3. 客户端 `UpdateChecker` 检查更新并下载安装。
+正式接入仍须完成两个版本的实际升级：
+
+1. 在各目标机器安装旧版，并保存一条业务数据。
+2. 用同一签名身份发布更高测试版本，确认草稿在所有构建和验签完成前保持私有。
+3. 从旧版检查更新，完成下载、验签、安装、重启，确认版本变化与业务数据保留。
+4. 打开未保存编辑窗口，分别在下载前、下载期间修改，确认安装被阻止，保存后可重试。
+5. 验证断网、下载/安装失败和重新检查；Windows 安装器可能直接退出应用，macOS/Linux 通常在安装返回后重启。
+
+本地自动化通过不能代替三平台安装、系统签名/公证和多窗口运行验收。

@@ -84,6 +84,11 @@ export default tseslint.config(
       globals: {
         console: "readonly",
         process: "readonly",
+        fetch: "readonly",
+        Response: "readonly",
+        AbortSignal: "readonly",
+        URL: "readonly",
+        structuredClone: "readonly",
       },
     },
   },

@@ -57,9 +57,19 @@ await openExternal("https://example.com");
 ```tsx
 import { useUpdater } from "../hooks/useUpdater";
 
-const { checking, update, checkForUpdates, downloadAndInstall } = useUpdater();
+const { busy, phase, update, progress, error, checkForUpdates, downloadAndInstall } = useUpdater();
 ```
 
 更新源配置在 `src-tauri/tauri.conf.json` 的 `plugins.updater.endpoints`，签名公钥为 `plugins.updater.pubkey`。
 
 > 私钥 `src-tauri/updater.key` 已被 `.gitignore` 忽略，请妥善保管；CI 通过 `TAURI_SIGNING_PRIVATE_KEY` 注入。
+
+`phase` 表示检查、无更新、可更新、下载、安装、被未保存内容阻止、错误和重启状态；`progress` 包含已下载字节和可选总字节，`error` 包含失败阶段和原始消息。设置页已经接入中英反馈与进度，无总大小时显示已下载字节。
+
+同窗口的 hook 实例共享状态与同步防重。支持 Web Locks 的同源 WebView 还会互斥检查、下载和安装；不支持时仅保证同窗口防重。锁被其他窗口占用时检查返回 `undefined`，无更新返回 `null`，调用方应区分这两种结果；检查失败会抛错，由入口呈现反馈。
+
+托盘的「检查更新」通过 `openSettingsWindow("update")` 打开或聚焦设置更新页，由设置 WebView 自行检查和持有插件资源。一次性非敏感 localStorage token 保留新窗口就绪前的请求，已打开窗口通过 storage 事件接收；浏览器同页降级另发 DOM 通知。不会跨窗口传递 `Update` 资源，也不要求用户再手动检查一次。
+
+下载安装前和下载完成后，都会调用后端 `window_list` 读取 dirty 状态。有未保存内容或无法读取状态时不安装；保存后重试可以复用已下载包。下载/安装失败释放资源并在重试时重新检查，重启失败只重试重启。
+
+新增编辑窗口必须同步 `setWindowDirty` 才能参与此保护。两次读取是状态快照，不会原子冻结其他窗口编辑；接入后需按自己的编辑模式完成多窗口升级验收。发布与旧 endpoint 迁移步骤见 [CI/CD 与自动更新发布](./ci-cd.md)。

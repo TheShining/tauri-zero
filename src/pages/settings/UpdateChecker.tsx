@@ -1,4 +1,4 @@
-import { Button, Flex, Typography } from "antd";
+import { Button, Flex, Progress, Typography } from "antd";
 import { useTranslation } from "react-i18next";
 import { useUpdater } from "../../hooks/useUpdater";
 
@@ -6,7 +6,29 @@ import { useUpdater } from "../../hooks/useUpdater";
 // Rendered as rows inside the settings window's "update" group; no longer wrapped in a Card.
 export default function UpdateChecker() {
   const { t } = useTranslation();
-  const { checking, update, checkForUpdates, downloadAndInstall } = useUpdater();
+  const { checking, busy, phase, update, progress, error, checkForUpdates, downloadAndInstall } =
+    useUpdater();
+  const percent =
+    progress.total && progress.total > 0
+      ? Math.min(100, Math.round((progress.downloaded / progress.total) * 100))
+      : undefined;
+  let status = update ? t("update.newVersion", { version: update.version }) : t("update.checkDesc");
+  if (phase === "checking") status = t("update.checking");
+  if (phase === "current") status = t("update.upToDate");
+  if (phase === "blocked") status = t("update.saveBeforeInstall");
+  if (phase === "busy") status = t("update.busyElsewhere");
+  if (phase === "installing") status = t("update.installing");
+  if (phase === "installed") status = t("update.restarting");
+  if (phase === "downloading") {
+    status = t(
+      percent === undefined ? "update.downloadProgressUnknown" : "update.downloadProgress",
+      {
+        percent,
+        downloaded: Math.round(progress.downloaded / 1024),
+        total: Math.round((progress.total ?? 0) / 1024),
+      },
+    );
+  }
 
   return (
     <div className="settings-group">
@@ -16,19 +38,48 @@ export default function UpdateChecker() {
       <div className="settings-row">
         <Flex vertical gap={2} style={{ minWidth: 0 }}>
           <Typography.Text>{t("update.checkUpdate")}</Typography.Text>
-          <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-            {update ? t("update.newVersion", { version: update.version }) : t("update.checkDesc")}
+          <Typography.Text
+            role="status"
+            aria-live="polite"
+            type="secondary"
+            style={{ fontSize: 12 }}
+          >
+            {status}
           </Typography.Text>
+          {phase === "downloading" && percent !== undefined && (
+            <Progress percent={percent} size="small" />
+          )}
+          {error && (
+            <Typography.Text role="alert" type="danger" style={{ fontSize: 12 }}>
+              {t(`update.${error.stage}Failed`)}: {error.message}
+            </Typography.Text>
+          )}
         </Flex>
-        {update ? (
-          <Button type="primary" onClick={() => void downloadAndInstall()}>
-            {t("update.downloadInstall")}
-          </Button>
-        ) : (
-          <Button loading={checking} onClick={() => void checkForUpdates()}>
+        <Flex gap={8}>
+          <Button
+            disabled={busy}
+            loading={checking}
+            onClick={() => void checkForUpdates().catch(() => undefined)}
+          >
             {t("update.checkUpdate")}
           </Button>
-        )}
+          {update && (
+            <Button
+              type="primary"
+              disabled={busy}
+              loading={busy && !checking}
+              onClick={() => void downloadAndInstall()}
+            >
+              {t(
+                error
+                  ? "update.retry"
+                  : phase === "installed"
+                    ? "update.restart"
+                    : "update.downloadInstall",
+              )}
+            </Button>
+          )}
+        </Flex>
       </div>
     </div>
   );

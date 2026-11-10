@@ -32,6 +32,8 @@ pnpm tauri:dev
 | `pnpm lint` | ESLint 检查 |
 | `pnpm typecheck` | TypeScript 类型检查 |
 | `pnpm test` | Vitest 单元测试 |
+| `pnpm test:release` | 发布清单、验签、草稿保护和密钥脚本测试 |
+| `pnpm updater:keygen` | 新项目首次生成 updater 密钥，拒绝覆盖已有文件 |
 | `pnpm rust:check` | cargo check |
 | `pnpm rust:clippy` | cargo clippy（`-D warnings`） |
 | `pnpm rust:test` | 以 `APP_ENV=test` 执行 cargo test |
@@ -52,6 +54,8 @@ pnpm tauri:build:test
 ```
 
 产物位于 `src-tauri/target/release/bundle/`。环境变量在构建时注入，目标机器不需要 `.env` 文件。
+
+签名打包需要配置 `TAURI_SIGNING_PRIVATE_KEY`；接入自己的应用时，还要更换仓库更新地址并配置自己的签名身份。已有安装用户的项目应沿用原密钥。具体步骤见 [CI/CD 与自动更新发布](./ci-cd.md)。
 
 development 和 test 打包会把环境后缀加在架构标记后面：
 

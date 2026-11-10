@@ -16,6 +16,18 @@ pnpm test
 - `src/stores/useUserStore.test.ts`：持久化只包含 user、绝不包含 token；
 - `src/hooks/useTauriEvent.test.tsx`：事件订阅转发、handler 更新不重订阅、卸载退订；
 - `src/hooks/useConfigSync.test.tsx`：config-changed 广播应用到 store，值未变时不触发 setState（回声防护）。
+- `src/hooks/useUpdater.test.tsx`：检查/下载/安装失败、无更新、进度、重复操作、dirty 阻止安装及真实设置 UI。
+- `src/pages/settings/Settings.test.tsx`：托盘打开更新页、新窗口/已打开窗口接收检查请求、普通设置入口、打开失败清理与浏览器降级。
+
+## 发布脚本测试 / Release script tests
+
+```bash
+pnpm test:release
+```
+
+`scripts/*.test.mjs` 使用 Node 自带测试运行器，与 `src/` 内的 Vitest 测试分开执行。测试生成内存密钥与小型安装包 fixture，通过真实 Ed25519 验签验证清单，包含错误密钥、篡改包、缺平台、tag/版本不一致、已发布保护、草稿重跑与旧版本保护。密钥脚本测试在临时目录使用 fake CLI，不读取项目私钥或访问 GitHub。
+
+真实发布后的旧版升级、安装器行为和数据保留仍需在各目标平台验收，步骤见 [ci-cd.md](./ci-cd.md)。
 
 ### 新增测试
 
@@ -49,4 +61,4 @@ pnpm rust:test
 
 ## 质量门禁
 
-提交前会自动运行 lint-staged；CI 会执行 `lint` → `typecheck` → `test` → `rust:check` → `rust:clippy` → `rust:test`。
+提交前会自动运行 lint-staged；CI 会执行 `lint` → `typecheck` → `test` → `test:release` → `rust:check` → `rust:clippy` → `rust:test`。

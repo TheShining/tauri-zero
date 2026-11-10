@@ -6,35 +6,21 @@ import TitleBar from "./titlebar/TitleBar";
 import { feedback } from "../utils/feedback";
 import { APP_EVENTS } from "../api/ipc/events";
 import { useTauriEvent } from "../hooks/useTauriEvent";
-import { useUpdater } from "../hooks/useUpdater";
 import { createAndOpenNote } from "../utils/notes";
 import { openSettingsWindow } from "../utils/settings";
 
 export default function BasicLayout() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { checkForUpdates } = useUpdater();
-
-  // 更新检查统一走 useUpdater；托盘触发时顺带通知并打开设置窗口（单例，已开则聚焦）供下载。
-  // Update checks go through useUpdater uniformly; the tray-triggered check additionally
-  // notifies and opens the settings window (singleton, focused if already open) for downloading.
+  // 让设置窗口自己检查并持有更新资源，检查结果也由更新页统一呈现。
+  // Let settings check and own its updater resources; the update page presents the result.
   const handleCheckUpdate = useCallback(async () => {
     try {
-      const update = await checkForUpdates();
-      if (update) {
-        void openSettingsWindow();
-        feedback.notify(
-          "info",
-          t("tray.updateAvailable", { version: update.version }),
-          t("tray.updateAvailableDesc"),
-        );
-      } else {
-        feedback.notify("success", t("tray.upToDate"));
-      }
+      await openSettingsWindow("update");
     } catch (e) {
-      feedback.notify("error", t("tray.updateFailed"), String(e));
+      feedback.notify("error", t("common.settingsOpenFailed"), String(e));
     }
-  }, [checkForUpdates, t]);
+  }, [t]);
 
   // 监听托盘弹窗事件（由后端发出）。
   // Listen for events from the tray popup (the backend emits these).

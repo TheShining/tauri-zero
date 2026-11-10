@@ -2,32 +2,75 @@ name: release
 
 on:
   push:
-    tags:
-      - "v*"
+    tags: ["v*"]
   workflow_dispatch:
     inputs:
       tag:
-        description: "要构建的 tag（例如 v0.2.0）"
+        description: "要构建的稳定 tag / Stable tag to build (vX.Y.Z)"
         required: true
         type: string
 
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: release-${{ github.event.inputs.tag || github.ref_name }}
+  cancel-in-progress: false
 
 jobs:
+  prepare:
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    outputs:
+      release_id: ${{ steps.prepare.outputs.release_id }}
+      sha: ${{ steps.prepare.outputs.sha }}
+      tag: ${{ steps.prepare.outputs.tag }}
+    env:
+      RELEASE_TAG: ${{ github.event.inputs.tag || github.ref_name }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ env.RELEASE_TAG }}
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Test release validation
+        run: node --test scripts/release-manifest.test.mjs scripts/release-github.test.mjs scripts/generate-updater-key.test.mjs
+      - name: Validate version and prepare draft
+        id: prepare
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+        run: node scripts/release.mjs prepare
+
   build:
+    needs: prepare
+    permissions:
+      contents: write
     strategy:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-latest
           - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            bundles: nsis,msi
+          - os: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            bundles: appimage,deb
           - os: macos-latest
+            target: x86_64-apple-darwin
+            bundles: app,dmg
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            bundles: app,dmg
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v5
         with:
-          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || github.ref }}
+          ref: ${{ needs.prepare.outputs.sha }}
+          persist-credentials: false
 
       - uses: pnpm/action-setup@v5
         with:
@@ -39,39 +82,67 @@ jobs:
           cache: pnpm
 
       - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
 
       - name: Install Linux dependencies
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y \
-            libwebkit2gtk-4.1-dev \
-            librsvg2-dev \
-            patchelf \
-            libssl-dev \
-            libxdo-dev \
-            libayatana-appindicator3-dev
+          sudo apt-get install -y libwebkit2gtk-4.1-dev librsvg2-dev patchelf libssl-dev libxdo-dev libayatana-appindicator3-dev
 
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
+          key: ${{ matrix.target }}
 
       - run: pnpm install --frozen-lockfile
 
-      - name: Build Tauri app
+      - name: Recheck draft before building or uploading
         env:
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-        run: pnpm tauri build
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
+          RELEASE_ID: ${{ needs.prepare.outputs.release_id }}
+        run: node scripts/release.mjs guard
 
-      - name: Upload release assets
-        uses: softprops/action-gh-release@v2
+      - name: Build and upload signed installers to draft
+        uses: tauri-apps/tauri-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          APP_ENV: production
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
-          tag_name: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || github.ref_name }}
-          files: |
-            src-tauri/target/release/bundle/**/*.msi
-            src-tauri/target/release/bundle/**/*.exe
-            src-tauri/target/release/bundle/**/*.dmg
-            src-tauri/target/release/bundle/**/*.app.tar.gz
-            src-tauri/target/release/bundle/**/*.deb
-            src-tauri/target/release/bundle/**/*.AppImage
-            src-tauri/target/release/bundle/**/*.json
+          releaseId: ${{ needs.prepare.outputs.release_id }}
+          tagName: ${{ needs.prepare.outputs.tag }}
+          releaseDraft: true
+          uploadUpdaterJson: false
+          uploadUpdaterSignatures: true
+          releaseAssetNamePattern: "[name]_[version]_[platform]_[arch][setup][ext]"
+          args: --target ${{ matrix.target }} --bundles ${{ matrix.bundles }}
+          retryAttempts: 2
+
+  publish:
+    needs: [prepare, build]
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    # 所有版本共用发布锁，较旧构建完成后也必须重新比较线上版本。
+    # All versions share the publish lock; a late older build must recheck the published version.
+    concurrency:
+      group: release-publish-${{ github.repository }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ needs.prepare.outputs.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Verify signatures, upload manifests, and publish
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
+          RELEASE_ID: ${{ needs.prepare.outputs.release_id }}
+        run: node scripts/release.mjs finalize

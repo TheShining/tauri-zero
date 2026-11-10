@@ -5,6 +5,8 @@ import TitleBar from "../../layouts/titlebar/TitleBar";
 import { useAppStore, type Locale, type ThemeMode } from "../../stores/useAppStore";
 import { SlidersIcon, UpdateIcon } from "../../components/icons";
 import UpdateChecker from "./UpdateChecker";
+import { useUpdater } from "../../hooks/useUpdater";
+import { subscribeSettingsUpdate } from "../../utils/settings";
 import "./settings.scss";
 
 type SectionKey = "general" | "update";
@@ -20,6 +22,18 @@ export default function Settings() {
   const { t } = useTranslation();
   const { token } = antdTheme.useToken();
   const [section, setSection] = useState<SectionKey>("general");
+  const { checkForUpdates } = useUpdater();
+
+  // 更新资源属于 settings 自己的 WebView；托盘只传导航意图，避免跨窗口传递插件资源。
+  // Updater resources belong to settings' own WebView; the tray sends navigation intent, never plugin resources.
+  useEffect(
+    () =>
+      subscribeSettingsUpdate(() => {
+        setSection("update");
+        void checkForUpdates().catch(() => undefined);
+      }),
+    [checkForUpdates],
+  );
 
   const themeMode = useAppStore((s) => s.theme);
   const setTheme = useAppStore((s) => s.setTheme);
