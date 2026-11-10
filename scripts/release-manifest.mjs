@@ -109,12 +109,28 @@ function assetTarget(name, version) {
   )?.[0];
 }
 
-function validateAsset(asset, repository, tag) {
+export function assetDownloadUrl(repository, tag, name) {
+  return `https://github.com/${repository}/releases/download/${tag}/${encodeURIComponent(name)}`;
+}
+
+function validateAsset(asset, repository) {
   if (asset.state !== "uploaded" || !Number.isSafeInteger(asset.size) || asset.size <= 0)
     throw new Error(`Asset is empty or not uploaded: ${asset.name}`);
-  const expected = `https://github.com/${repository}/releases/download/${tag}/${encodeURIComponent(asset.name)}`;
-  if (asset.browser_download_url !== expected)
-    throw new Error(`Asset URL must be pinned to this repository and release tag: ${asset.name}`);
+  if (!Number.isSafeInteger(asset.id) || asset.id <= 0)
+    throw new Error(`Invalid asset ID: ${asset.name}`);
+  // 校验实际下载使用的 API 身份，不依赖草稿浏览器地址。Validate the API identity used for downloads, independently of draft browser URLs.
+  const source =
+    typeof asset.url === "string"
+      ? /^https:\/\/api\.github\.com\/repos\/([^/]+\/[^/]+)\/releases\/assets\/([1-9]\d*)$/.exec(
+          asset.url,
+        )
+      : null;
+  if (
+    !source ||
+    source[1].toLowerCase() !== repository.toLowerCase() ||
+    source[2] !== String(asset.id)
+  )
+    throw new Error(`Asset API URL must match this repository and asset ID: ${asset.name}`);
 }
 
 async function readBytes(asset, readAsset) {
@@ -158,15 +174,15 @@ export async function createManifest({
     const signatures = assets.filter((candidate) => candidate.name === `${asset.name}.sig`);
     if (signatures.length !== 1)
       throw new Error(`Missing or duplicate signature asset: ${asset.name}`);
-    validateAsset(asset, repository, tag);
-    validateAsset(signatures[0], repository, tag);
+    validateAsset(asset, repository);
+    validateAsset(signatures[0], repository);
     return [target, asset, signatures[0]];
   });
   const platforms = {};
   for (const [target, asset, sig] of pairs) {
     const content = await readBytes(asset, readAsset);
     const signature = verifySignature(content, await readBytes(sig, readAsset), key);
-    platforms[target] = { signature, url: asset.browser_download_url };
+    platforms[target] = { signature, url: assetDownloadUrl(repository, tag, asset.name) };
   }
   const manifest = { version, notes: release.body ?? "", pub_date: release.created_at, platforms };
   // 每个历史端点都携带完整清单，让已安装客户端继续更新。Every legacy endpoint carries the complete manifest so installed clients can keep updating.

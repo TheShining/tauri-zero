@@ -140,6 +140,52 @@ test("finalize uploads all compatibility manifests before publishing", async () 
   assert.deepEqual(api.calls.at(-1).body, { draft: false, make_latest: "true" });
 });
 
+test("finalize rebuilds tag-pinned URLs from draft placeholder asset URLs", async () => {
+  const data = fixture();
+  for (const asset of data.assets) {
+    asset.browser_download_url = asset.browser_download_url.replace(
+      "/v0.6.0/",
+      "/untagged-7b395c8448de028b853c/",
+    );
+  }
+  const api = fakeGitHub(data);
+  await finalizeRelease(api, { ...data, releaseId: 7 });
+  const manifests = api.calls
+    .filter((call) => call.method === "POST")
+    .map((call) => JSON.parse(call.body.toString()));
+  assert.equal(manifests.length, 5);
+  for (const manifest of manifests) {
+    for (const platform of Object.values(manifest.platforms)) {
+      assert.match(
+        platform.url,
+        /^https:\/\/github\.com\/owner\/repo\/releases\/download\/v0\.6\.0\//,
+      );
+    }
+  }
+  const downloads = api.calls.filter((call) => call.method === "GET" && call.binary);
+  assert.deepEqual(
+    downloads.map((call) => call.path).sort(),
+    data.assets.map((asset) => `/releases/assets/${asset.id}`).sort(),
+  );
+  assert.equal(api.calls.at(-1).method, "PATCH");
+  assert.equal(api.state.release.draft, false);
+});
+
+test("invalid asset API identities leave the draft untouched before binary downloads", async () => {
+  for (const index of [0, 1]) {
+    const data = fixture();
+    data.assets[index].url =
+      `https://api.github.com/repos/other/repo/releases/assets/${data.assets[index].id}`;
+    const api = fakeGitHub(data);
+    await assert.rejects(finalizeRelease(api, { ...data, releaseId: 7 }), /api.*url/i);
+    assert.equal(api.state.release.draft, true);
+    assert.equal(
+      api.calls.some((call) => call.method !== "GET" || call.binary),
+      false,
+    );
+  }
+});
+
 test("a missing platform leaves the draft and existing manifests untouched", async () => {
   const data = fixture();
   data.assets = data.assets.filter((asset) => !asset.name.includes("darwin_aarch64"));

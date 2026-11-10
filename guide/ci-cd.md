@@ -60,7 +60,9 @@ tauri-zero_0.6.0_darwin_x64.app.tar.gz
 tauri-zero_0.6.0_darwin_aarch64.app.tar.gz
 ```
 
-矩阵任务不写共享清单，避免并行覆盖。`scripts/release.mjs finalize` 集中读取草稿的实际资产，下载四个目标的更新包（含 Debian 专用包）及 `.sig`，按配置公钥验证 Ed25519 签名、包内容和可信注释；签名不匹配、缺平台、空包、重复或错误 URL 均停止发布。
+矩阵任务不写共享清单，避免并行覆盖。`scripts/release.mjs finalize` 通过认证 API 枚举指定仓库和 Release ID 下的资产，校验上传状态、大小、平台/版本文件名、签名配对及正安全整数资产 ID，并确认资产 `url` 对应本仓库的 `/releases/assets/{id}` API 地址。随后通过资产 ID 下载四个目标的更新包（含 Debian 专用包）及 `.sig`，按配置公钥验证 Ed25519 签名、实际字节数和可信注释；任一检查失败均停止发布。
+
+草稿的 `browser_download_url` 可能使用 `untagged-…` 占位 tag，该字段不参与校验或下载。清单中的 URL 由仓库、正式 tag 和实际资产名称生成，不会写入占位地址。接入其他仓库时保留资产 ID/API 归属检查及验签，无需为草稿浏览器地址添加白名单。
 
 集中生成的清单包含 `version`、`notes`、`pub_date` 与各平台的 `url`、`signature`。`signature` 是 `.sig` 文件正文；URL 固定到对应 tag，不使用会变化的 `/latest/download/` 包地址。
 

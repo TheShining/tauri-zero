@@ -177,22 +177,95 @@ test("missing, duplicate, unuploaded and empty required assets are rejected", as
   }
 });
 
-test("asset URLs are pinned to HTTPS GitHub repository, tag and encoded name", async () => {
+test("asset API URLs must match this repository and asset ID", async () => {
   for (const url of [
-    "https://github.com/owner/repo/releases/latest/download/tauri-zero_0.6.0_windows_x64-setup.exe",
-    "http://github.com/owner/repo/releases/download/v0.6.0/tauri-zero_0.6.0_windows_x64-setup.exe",
-    "https://github.com/other/repo/releases/download/v0.6.0/tauri-zero_0.6.0_windows_x64-setup.exe",
-    "https://github.com/owner/repo/releases/download/v0.5.0/tauri-zero_0.6.0_windows_x64-setup.exe",
-    "https://github.com/owner/repo/releases/download/v0.6.0/another.exe",
-    "https://github.com/owner/repo/releases/download/v0.6.0/tauri-zero_0.6.0_windows_x64-setup.exe?download=1",
+    undefined,
+    "http://api.github.com/repos/owner/repo/releases/assets/10",
+    "https://evil.test/repos/owner/repo/releases/assets/10",
+    "https://api.github.com/repos/other/repo/releases/assets/10",
+    "https://api.github.com/repos/owner/other/releases/assets/10",
+    "https://api.github.com/repos/owner/repo/releases/assets/99",
+    "https://api.github.com/repos/owner/repo/releases/assets/010",
+    "https://api.github.com/repos/owner/repo/releases/assets/10?download=1",
+    "https://api.github.com/repos/owner/repo/releases/assets/10#fragment",
+    "https://api.github.com/repos/owner/repo/releases/assets/10\n",
+    "https://api.github.com:8443/repos/owner/repo/releases/assets/10",
+    "https://api.github.com@evil.test/repos/owner/repo/releases/assets/10",
+    "https://api.github.com/repos/owner/repo/releases/10/assets",
   ]) {
-    const input = fixture();
-    input.assets[0].browser_download_url = url;
-    await assert.rejects(createManifest(input), /url/i);
+    for (const index of [0, 1]) {
+      const input = fixture();
+      input.assets[index].url = url;
+      let reads = 0;
+      input.readAsset = async (asset) => {
+        reads++;
+        return input.bytes.get(asset.name);
+      };
+      await assert.rejects(createManifest(input), /api.*url/i);
+      assert.equal(reads, 0);
+    }
   }
+});
+
+test("installer and signature asset IDs must be positive safe integers", async () => {
+  for (const id of [undefined, null, "10", 0, -1, 1.5, NaN, Infinity, 2 ** 53]) {
+    for (const index of [0, 1]) {
+      const input = fixture();
+      input.assets[index].id = id;
+      input.assets[index].url = `https://api.github.com/repos/owner/repo/releases/assets/${id}`;
+      await assert.rejects(createManifest(input), /asset id/i);
+    }
+  }
+});
+
+test("browser download metadata never controls validation or manifest URLs", async () => {
+  for (const draft of [true, false]) {
+    for (const url of [
+      undefined,
+      null,
+      "",
+      "https://evil.test/file",
+      "https://github.com/other/repo/releases/download/v0.5.0/file",
+    ]) {
+      const input = fixture();
+      input.release.draft = draft;
+      for (const asset of input.assets) {
+        if (url === undefined) delete asset.browser_download_url;
+        else asset.browser_download_url = url;
+      }
+      const { manifest } = await createManifest(input);
+      for (const platform of Object.values(manifest.platforms)) {
+        assert.match(
+          platform.url,
+          /^https:\/\/github\.com\/owner\/repo\/releases\/download\/v0\.6\.0\//,
+        );
+      }
+    }
+  }
+});
+
+test("draft placeholder asset URLs are accepted while manifests pin the real tag", async () => {
   const input = fixture();
-  input.assets[1].browser_download_url = "https://evil.test/file.sig";
-  await assert.rejects(createManifest(input), /url/i);
+  for (const asset of input.assets) {
+    asset.browser_download_url = `https://github.com/owner/repo/releases/download/untagged-7b395c8448de028b853c/${encodeURIComponent(asset.name)}`;
+  }
+  const { manifest } = await createManifest(input);
+  assert.equal(
+    manifest.platforms["windows-x86_64"].url,
+    "https://github.com/owner/repo/releases/download/v0.6.0/tauri-zero_0.6.0_windows_x64-setup.exe",
+  );
+});
+
+test("asset API repository identity accepts differences in repository casing", async () => {
+  const input = fixture({ repository: "Owner/Repo" });
+  for (const asset of input.assets) {
+    asset.url = asset.url.replace("/Owner/Repo/", "/owner/repo/");
+  }
+  const { manifest } = await createManifest(input);
+  assert.equal(
+    manifest.platforms["windows-x86_64"].url,
+    "https://github.com/Owner/Repo/releases/download/v0.6.0/tauri-zero_0.6.0_windows_x64-setup.exe",
+  );
 });
 
 test("signatures cryptographically reject a different private key even when the key ID matches", async () => {
