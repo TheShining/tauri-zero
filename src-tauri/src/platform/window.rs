@@ -444,6 +444,8 @@ impl WindowManager {
             .unwrap_or(true);
 
         if !close_to_tray {
+            // 禁用关闭到托盘时退出整个应用，避免只销毁 main 后留下隐藏窗口。Exit the whole app so hidden windows cannot outlive a destroyed main window.
+            app.exit(0);
             return;
         }
 

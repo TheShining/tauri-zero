@@ -1,8 +1,12 @@
 import { fetch as tauriFetch } from "@tauri-apps/plugin-http";
 import type { RequestConfig } from "./types";
 
-export async function httpFetch(url: string, config: RequestConfig): Promise<Response> {
-  const { baseURL, timeout, params, body, headers, ...rest } = config;
+export async function httpFetch<T>(
+  url: string,
+  config: RequestConfig,
+  consume: (response: Response) => Promise<T>,
+): Promise<T> {
+  const { baseURL, timeout = 20_000, params, body, headers, ...rest } = config;
 
   const fullUrl = baseURL ? `${baseURL}${url}` : url;
   const urlObj = new URL(fullUrl);
@@ -28,35 +32,45 @@ export async function httpFetch(url: string, config: RequestConfig): Promise<Res
   }
 
   const controller = new AbortController();
-  const timer = timeout ? setTimeout(() => controller.abort(), timeout) : undefined;
+  const timer = timeout
+    ? setTimeout(
+        () => controller.abort(new DOMException("Request timed out", "TimeoutError")),
+        timeout,
+      )
+    : undefined;
 
-  // 合并调用方的取消信号：原实现里 controller.signal 会静默覆盖 rest.signal，
-  // 导致调用方传入的 signal（如路由切换时取消请求）完全不生效。
-  // Merge the caller's abort signal: previously controller.signal silently overrode
-  // rest.signal, so a caller-provided signal (e.g. cancelling requests on route change)
-  // had no effect at all.
+  // 调用方取消和超时共用同一控制器。Forward caller cancellation and timeout into the same controller.
   const outerSignal = rest.signal;
-  const onOuterAbort = () => controller.abort();
+  const onOuterAbort = () => controller.abort(outerSignal?.reason);
   if (outerSignal) {
     if (outerSignal.aborted) {
-      controller.abort();
+      controller.abort(outerSignal.reason);
     } else {
       outerSignal.addEventListener("abort", onOuterAbort, { once: true });
     }
   }
 
+  let response: Response | undefined;
   try {
-    return await tauriFetch(urlObj.toString(), {
+    controller.signal.throwIfAborted();
+    response = await tauriFetch(urlObj.toString(), {
       ...rest,
-      headers: headers as Record<string, string>,
+      headers,
       body: finalBody,
       signal: controller.signal,
     });
+    // 响应体读取也属于请求生命周期，完成后才释放取消监听与定时器。Keep cancellation and timeout active until response consumption finishes.
+    const result = await consume(response);
+    controller.signal.throwIfAborted();
+    return result;
+  } catch (error) {
+    if (controller.signal.aborted) throw controller.signal.reason;
+    throw error;
   } finally {
     if (timer) clearTimeout(timer);
-    // 请求结束后移除监听（once 只在触发后自动移除），避免长生命周期外部 signal 上的监听器持续累积。
-    // Remove the listener after the request settles (once only auto-removes after firing),
-    // avoiding listener accumulation on long-lived external signals.
     outerSignal?.removeEventListener("abort", onOuterAbort);
+    if (response?.body && !response.bodyUsed) {
+      void response.body.cancel().catch(() => {});
+    }
   }
 }

@@ -12,6 +12,7 @@ export type ErrorInterceptor = (error: unknown) => void | Promise<void>;
 
 export interface RequestConfig extends Omit<RequestInit, "body"> {
   baseURL?: string;
+  /** 超时毫秒数，默认 20 秒，0 表示禁用。Timeout in milliseconds; defaults to 20 seconds, 0 disables it. */
   timeout?: number;
   body?: BodyInit | Record<string, unknown>;
   params?: Record<string, string | number | boolean | undefined>;

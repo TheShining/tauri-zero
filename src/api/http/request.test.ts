@@ -1,21 +1,19 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// mock 底层 fetch 与反馈组件：request 层测试只验证拦截器链、错误语义与协议假设。
-// Mock the low-level fetch and the feedback component: request-layer tests only verify
-// the interceptor chain, error semantics and protocol assumptions.
-vi.mock("./client", () => ({
-  httpFetch: vi.fn(),
+// 只替换插件传输，保留 client 与 request 的完整生命周期。Mock only plugin transport to exercise the full client/request lifecycle.
+vi.mock("@tauri-apps/plugin-http", () => ({
+  fetch: vi.fn(),
 }));
 vi.mock("../../utils/feedback", () => ({
   feedback: { success: vi.fn(), error: vi.fn(), info: vi.fn(), notify: vi.fn() },
 }));
 
-import { httpFetch } from "./client";
+import { fetch as tauriFetch } from "@tauri-apps/plugin-http";
 import { feedback } from "../../utils/feedback";
 import { addErrorInterceptor, ApiError, addRequestInterceptor, request } from "./request";
 import { useUserStore } from "../../stores/useUserStore";
 
-const httpFetchMock = vi.mocked(httpFetch);
+const httpFetchMock = vi.mocked(tauriFetch);
 const feedbackErrorMock = vi.mocked(feedback.error);
 
 function jsonResponse(init: { status?: number; body?: unknown; contentType?: string } = {}) {
@@ -32,9 +30,14 @@ function jsonResponse(init: { status?: number; body?: unknown; contentType?: str
 
 describe("http request", () => {
   beforeEach(() => {
+    vi.stubEnv("APP_PUBLIC_API_BASE_URL", "https://api.example.test");
     httpFetchMock.mockReset();
     feedbackErrorMock.mockReset();
     useUserStore.setState({ user: null, token: null });
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllEnvs();
   });
 
   // 正常链路：code === 0 时返回 data。
@@ -58,18 +61,159 @@ describe("http request", () => {
 
     await request("/a");
 
-    expect(httpFetchMock).toHaveBeenCalledWith(
-      "/a",
-      expect.objectContaining({
-        headers: expect.objectContaining({ Authorization: "Bearer tok-1" }) as unknown,
-      }),
+    expect(new Headers(httpFetchMock.mock.calls[0][1]?.headers).get("authorization")).toBe(
+      "Bearer tok-1",
     );
 
     httpFetchMock.mockResolvedValue(jsonResponse());
     await request("/b", { skipAuth: true });
-    // httpFetch mock 的参数类型即 RequestConfig。/ The httpFetch mock argument is typed as RequestConfig.
+    // 插件 mock 接收到最终 RequestInit。The plugin mock receives the final RequestInit.
     const secondConfig = httpFetchMock.mock.calls[1][1];
-    expect(secondConfig.headers).toBeUndefined();
+    expect(secondConfig?.headers).toBeUndefined();
+  });
+
+  it.each([
+    new Headers({ "X-Custom": "keep", authorization: "old" }),
+    [
+      ["X-Custom", "keep"],
+      ["authorization", "old"],
+    ] as [string, string][],
+    { "X-Custom": "keep", authorization: "old" },
+  ])(
+    "preserves HeadersInit and replaces authorization without mutating the caller",
+    async (headers) => {
+      useUserStore.setState({ token: "tok-1" });
+      httpFetchMock.mockImplementation(() => Promise.resolve(jsonResponse()));
+      await request("/headers", { headers });
+      const sent = new Headers(httpFetchMock.mock.calls[0][1]?.headers);
+      expect(sent.get("x-custom")).toBe("keep");
+      expect(sent.get("authorization")).toBe("Bearer tok-1");
+      expect(new Headers(headers).get("authorization")).toBe("old");
+      await request("/headers", { headers, skipAuth: true });
+      expect(new Headers(httpFetchMock.mock.calls[1][1]?.headers).get("authorization")).toBe("old");
+    },
+  );
+
+  it.each(["timeout", "external abort"])(
+    "keeps %s active while reading a slow response body",
+    async (mode) => {
+      vi.useFakeTimers();
+      const outer = new AbortController();
+      let markReady = () => {};
+      const headerReady = new Promise<void>((resolve) => {
+        markReady = resolve;
+      });
+      httpFetchMock.mockImplementation((_url, init) => {
+        const body = new ReadableStream<Uint8Array>({
+          start(controller) {
+            init?.signal?.addEventListener(
+              "abort",
+              () => controller.error(new DOMException("aborted", "AbortError")),
+              { once: true },
+            );
+          },
+        });
+        markReady();
+        return Promise.resolve(
+          new Response(body, { headers: { "content-type": "application/json" } }),
+        );
+      });
+      const remove = vi.spyOn(outer.signal, "removeEventListener");
+      const result = request("/slow", {
+        timeout: mode === "timeout" ? 20 : undefined,
+        signal: outer.signal,
+      });
+      const outcome = result.catch((error: unknown) => error);
+      await headerReady;
+      await vi.advanceTimersByTimeAsync(1);
+      const removedAtHeaders = remove.mock.calls.length;
+      if (mode === "timeout") await vi.advanceTimersByTimeAsync(20);
+      else outer.abort();
+      // 旧实现不会中止读取，用手动触发的兜底取消避免失败用例挂起。The old implementation needs a fallback abort to keep the regression from hanging.
+      const signal = httpFetchMock.mock.calls[0][1]?.signal;
+      if (!signal?.aborted) signal?.dispatchEvent(new Event("abort"));
+      const error: unknown = await outcome;
+      expect(removedAtHeaders).toBe(0);
+      expect(error).toMatchObject({ name: mode === "timeout" ? "TimeoutError" : "AbortError" });
+      expect(remove).toHaveBeenCalledWith("abort", expect.any(Function));
+      expect(feedbackErrorMock).toHaveBeenCalledTimes(1);
+    },
+  );
+
+  it.each([undefined, 0])(
+    "uses a 20s default timeout and lets zero disable it (%s)",
+    async (timeout) => {
+      vi.useFakeTimers();
+      const outer = new AbortController();
+      let markReady = () => {};
+      const ready = new Promise<void>((resolve) => {
+        markReady = resolve;
+      });
+      httpFetchMock.mockImplementation((_url, init) => {
+        const body = new ReadableStream<Uint8Array>({
+          start(controller) {
+            init?.signal?.addEventListener(
+              "abort",
+              () => controller.error(new DOMException("aborted", "AbortError")),
+              { once: true },
+            );
+          },
+        });
+        markReady();
+        return Promise.resolve(
+          new Response(body, { headers: { "content-type": "application/json" } }),
+        );
+      });
+      const result = request("/default-timeout", { timeout, signal: outer.signal }).catch(
+        (error: unknown) => error,
+      );
+      await ready;
+      await vi.advanceTimersByTimeAsync(19_999);
+      const signal = httpFetchMock.mock.calls[0][1]?.signal;
+      expect(signal?.aborted).toBe(false);
+      await vi.advanceTimersByTimeAsync(1);
+      const abortedAtDeadline = signal?.aborted;
+      if (!signal?.aborted) outer.abort();
+      const error: unknown = await result;
+      expect(abortedAtDeadline).toBe(timeout === undefined);
+      expect(error).toMatchObject({ name: timeout === undefined ? "TimeoutError" : "AbortError" });
+      expect(vi.getTimerCount()).toBe(0);
+    },
+  );
+
+  it("releases cancellation listeners and timers after success and body parse failure", async () => {
+    vi.useFakeTimers();
+    for (const body of ['{"code":0,"data":1}', "broken-json"]) {
+      const outer = new AbortController();
+      const remove = vi.spyOn(outer.signal, "removeEventListener");
+      httpFetchMock.mockResolvedValue(
+        new Response(body, { headers: { "content-type": "application/json" } }),
+      );
+      const result = request("/cleanup", { timeout: 100, signal: outer.signal });
+      if (body === "broken-json") await expect(result).rejects.toBeInstanceOf(SyntaxError);
+      else await expect(result).resolves.toBe(1);
+      expect(remove).toHaveBeenCalledWith("abort", expect.any(Function));
+      expect(vi.getTimerCount()).toBe(0);
+    }
+    expect(feedbackErrorMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not start transport for an already aborted request", async () => {
+    const outer = new AbortController();
+    outer.abort();
+    await expect(request("/cancelled", { signal: outer.signal })).rejects.toMatchObject({
+      name: "AbortError",
+    });
+    expect(httpFetchMock).not.toHaveBeenCalled();
+    expect(feedbackErrorMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("cancels an unread body when the HTTP status is rejected", async () => {
+    const cancel = vi.fn();
+    httpFetchMock.mockResolvedValue(new Response(new ReadableStream({ cancel }), { status: 500 }));
+    await expect(request("/failed")).rejects.toMatchObject({ code: 500 });
+    expect(cancel).toHaveBeenCalledTimes(1);
+    expect(feedbackErrorMock).toHaveBeenCalledTimes(1);
   });
 
   // HTTP 状态码非 2xx：抛 ApiError 并弹统一错误提示。
@@ -153,19 +297,19 @@ describe("http request", () => {
   // 请求拦截器按注册顺序链式修改配置。
   // Request interceptors chain-modify the config in registration order.
   it("chains request interceptors", async () => {
-    addRequestInterceptor((config) => ({
-      ...config,
-      headers: { ...(config.headers as Record<string, string>), "X-Trace": "t-1" },
-    }));
+    addRequestInterceptor((config) => {
+      const headers = new Headers(config.headers);
+      headers.set("X-Trace", "t-1");
+      return { ...config, headers };
+    });
+    useUserStore.setState({ token: "tok-trace" });
     httpFetchMock.mockResolvedValue(jsonResponse());
 
     await request("/traced");
 
-    expect(httpFetchMock).toHaveBeenCalledWith(
-      "/traced",
-      expect.objectContaining({
-        headers: expect.objectContaining({ "X-Trace": "t-1" }) as unknown,
-      }),
+    expect(new Headers(httpFetchMock.mock.calls[0][1]?.headers).get("x-trace")).toBe("t-1");
+    expect(new Headers(httpFetchMock.mock.calls[0][1]?.headers).get("authorization")).toBe(
+      "Bearer tok-trace",
     );
   });
 });

@@ -102,11 +102,16 @@ const data = await request<UserInfo>("/user/info", { method: "GET" });
 
 - 自动拼接 `APP_PUBLIC_API_BASE_URL`
 - 自动注入 `Authorization: Bearer <token>`（可通过 `skipAuth: true` 关闭）
+- `headers` 支持对象、`Headers` 和键值元组数组；注入 token 时保留其他请求头，并替换大小写不同的既有 Authorization，不修改调用方传入的请求头
 - 响应约定 `{ code, message, data }`，`code !== 0` 时抛出 `ApiError`
 - 204 无内容响应返回 `undefined`；响应体非 JSON 时抛出 `ApiError`
 - 默认错误拦截器先于业务拦截器执行，统一 `feedback.error` 提示；
   需要自行处理错误时传 `skipErrorHandler: true` 跳过默认提示
 - 支持 `timeout`、`params`、`body`、`signal` 等配置（调用方 `signal` 与超时信号会合并）
+
+`timeout` 单位为毫秒，默认 `20_000`（20 秒），覆盖网络请求、响应拦截器及完整 JSON 响应体读取；单次请求可覆盖，设为 `0` 时禁用超时。超时抛出 `TimeoutError`，主动取消保留调用方 signal 的取消原因（默认 `AbortError`）。请求结束后清理定时器和监听；HTTP 状态或协议校验失败时取消未读取的响应体。响应体读取和 JSON 解析失败同样进入统一错误拦截器一次，`skipErrorHandler: true` 可跳过该链路。
+
+业务 API 继续调用 `request<T>()`。底层 `httpFetch` 的第三个参数是异步响应消费回调，响应拦截器与读取必须在回调内完成，才能保持完整请求的超时和取消生命周期。
 
 ### 自定义拦截器
 

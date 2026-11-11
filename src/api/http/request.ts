@@ -29,10 +29,9 @@ export function addErrorInterceptor(interceptor: ErrorInterceptor) {
 addRequestInterceptor((config) => {
   const token = useUserStore.getState().token;
   if (token && !config.skipAuth) {
-    config.headers = {
-      ...(config.headers as Record<string, string>),
-      Authorization: `Bearer ${token}`,
-    };
+    const headers = new Headers(config.headers);
+    headers.set("Authorization", `Bearer ${token}`);
+    config.headers = headers;
   }
   return config;
 });
@@ -77,21 +76,21 @@ export async function request<T = unknown>(url: string, config: RequestConfig = 
     finalConfig = await interceptor(finalConfig);
   }
 
-  let response: Response;
   try {
-    response = await httpFetch(url, finalConfig);
+    return await httpFetch(url, finalConfig, readResponse<T>);
   } catch (error) {
     await runErrorInterceptors(error, finalConfig);
     throw error;
   }
+}
 
+async function readResponse<T>(response: Response): Promise<T> {
   for (const interceptor of responseInterceptors) {
     response = await interceptor(response);
   }
 
   if (!response.ok) {
     const error = new ApiError(response.status, `HTTP ${response.status}`);
-    await runErrorInterceptors(error, finalConfig);
     throw error;
   }
 
@@ -113,14 +112,12 @@ export async function request<T = unknown>(url: string, config: RequestConfig = 
       response.status,
       `Unexpected response content-type: ${contentType || "unknown"}`,
     );
-    await runErrorInterceptors(error, finalConfig);
     throw error;
   }
 
   const result = (await response.json()) as ApiResponse<T>;
   if (result.code !== 0) {
     const error = new ApiError(result.code, result.message);
-    await runErrorInterceptors(error, finalConfig);
     throw error;
   }
 
